@@ -3,11 +3,10 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<html lang="ko">
 <head>
 <meta charset="UTF-8" />
 <title>산정보 페이지</title>
-<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=9d563a431666fc762d165b66fa174cbc"></script>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -15,14 +14,14 @@
 <link rel="icon" href="/resources/ico/favicon.ico" type="image/x-icon" />
 
 <link rel="stylesheet" href="/resources/css/header.css" />
-<link rel="stylesheet" href="/resources/css/final1.css" />
+<link rel="stylesheet" href="/resources/css/final3.css" />
 <link rel="stylesheet" href="/resources/css/footer.css" />
 <link rel="stylesheet" href="/resources/css/main.css" />
 
 <script src="/resources/js/header.js" defer></script>
 <script src="/resources/js/main.js" defer></script>
 <script src="/resources/js/favorite.js" defer></script>
-<script src="/resources/js/infode1.js" defer></script>
+<script src="/resources/js/infode3.js" defer></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.4.0/jquery-migrate.min.js"></script>
@@ -102,16 +101,21 @@
             </ul>
           </div>
 
-         
+          <c:forEach var="item" items="${sanInfodeList}">
             <div class="cotents">
             <div class="content1">
-           <div id="map" style="width:100%;height:350px;">
-           </div>
+            <h2>${item.sanName}</h2>
+            
 
-     
-			</div>
-			</div>
-			
+            <p>${item.}</p>
+            <p>${item.}</p>
+
+            </div>
+            </div>
+
+          </c:forEach>
+
+
 
 
 		
@@ -130,30 +134,12 @@
 	<%@include file="/WEB-INF/views/common/footer.jsp"%>
 	</div>
 	
-	<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=9d563a431666fc762d165b66fa174cbc">
+	<script>
 	
-	  var address = th:utext="${item.address}"; // Model에서 주소 정보 가져오기
-    var geocoder = new kakao.maps.services.Geocoder();
-    geocoder.addressSearch(address, function(result, status) {
-      if (status === kakao.maps.services.Status.OK) {
-        var map = new kakao.maps.Map(document.getElementById('map'), {
-          center: new kakao.maps.LatLng(result[0].y, result[0].x),
-          level: 3
-        });
-        var marker = new kakao.maps.Marker({
-          position: new kakao.maps.LatLng(result[0].y, result[0].x),
-          map: map
-        });
+	
+	
+	
 	
 	</script>
-	
-	
-	
-	
-	
-	
-	
-
-
 </body>
 </html>

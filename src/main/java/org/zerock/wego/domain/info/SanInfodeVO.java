@@ -13,8 +13,8 @@ public class SanInfodeVO {
    private String reason;//산 선정이유
    private String overview;//산 개관정보
    private String details;//산 설명
-   private String lon;
-   private Integer lat;//경도
+   private String lon;//경도
+   private Integer lat;//위도
    private String img;//산 이미지
    private Integer likeCnt;
 

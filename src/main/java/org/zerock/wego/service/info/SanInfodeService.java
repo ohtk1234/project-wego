@@ -19,8 +19,7 @@ import lombok.extern.log4j.Log4j2;
 public class SanInfodeService {
    
    private final SanInfodeMapper mapper;
-   
-   public List<SanInfodeVO> getById(Integer sanInfoId) throws ServiceException{
+   public SanInfodeVO getById(Integer sanInfoId) throws ServiceException{
       
       log.trace("selectById() invoked");
       

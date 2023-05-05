@@ -1,58 +1,70 @@
+var sanInfo = document.querySelector("#sanInfo").value;
 
+window.onload = function(){
+	console.log("loadload");
 
+		
+		$.ajax({
+        type: 'get',
+        url: '/info/'+sanInfo+'/information',
+        success: function(data){
+            $("#module").load("/info/"+sanInfo+"/information");
+	            
+        }
+	   });
+	
+};
+$('#in').click(function(){
+		
+		var module1 = document.querySelector("#module");
+		module1.innerHTML = '<div class="cotents"></div>';
+		$.ajax({
+        type: 'get',
+        url: '/info/'+sanInfo+'/Sandeail',
+        success: function(data){
+            $("#module").load("/info/"+sanInfo+"/Sandeail");
+        }
+	   });
+	   
+});
 
-function getinfode1() {
-  $.ajax({
-    // url: "./written",
-    url: "/info/infode1?sanInfoId=" + sanInfoId,
-    type: "GET",
-    
-  });
-}
+$('#wea').click(function(){
+		
+		var module1 = document.querySelector("#module");
+		module1.innerHTML = '<div class="cotents"></div>';
+		$.ajax({
+        type: 'get',
+        url: '/info/'+sanInfo+'/SanWeather',
+        success: function(data){
+            $("#module").load("/info/"+sanInfo+"/SanWeather");
+        }
+	   });
+	   
+});
 
-function userPosts() {
-  getinfode1();
-}
-
-function getinfode2() {
-  $.ajax({
-    // url: "./written",
-    url: "/info/infode2?sanInfoId=" + sanInfoId,
-    type: "GET",
-    
-  });
-}
-
-function userPosts() {
-  getinfode2();
-}
-
-
-function getinfode3() {
-  $.ajax({
-    // url: "./written",
-    url: "/info/infode3?sanInfoId=" + sanInfoId,
-    type: "GET",
-    
-  });
-}
-
-function userPosts() {
-  getinfode3();
-}
-
-
-function getinfode4() {
-  $.ajax({
-    // url: "./written",
-    url: "/info/infode3?sanInfoId=" + sanInfoId,
-    type: "GET",
-    
-  });
-}
-
-function userPosts() {
-  getinfode4();
-}
-
-
+$('#food').click(function(){
+		
+		var module1 = document.querySelector("#module");
+		module1.innerHTML = '<div class="cotents"></div>';
+		$.ajax({
+        type: 'get',
+        url: '/info/'+sanInfo+'/SanKakaoMap',
+        success: function(data){
+            $("#module").load("/info/"+sanInfo+"/SanKakaoMap");
+        }
+	   });
+	   
+});
+$('#item-point').click(function(){
+		
+		var module1 = document.querySelector("#module");
+		module1.innerHTML = '<div class="cotents"></div>';
+		$.ajax({
+        type: 'get',
+        url: '/info/'+sanInfo+'/information',
+        success: function(data){
+            $("#module").load("/info/"+sanInfo+"/information");
+        }
+	   });
+	   
+});

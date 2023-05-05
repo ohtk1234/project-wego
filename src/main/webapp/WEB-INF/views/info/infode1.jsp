@@ -2,6 +2,9 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+
+<%@include file="SanInfo4.jsp" %>
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -21,6 +24,7 @@
 <script src="/resources/js/header.js" defer></script>
 <script src="/resources/js/main.js" defer></script>
 <script src="/resources/js/favorite.js" defer></script>
+<script src="/resources/js/infode1.js" defer></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.4.0/jquery-migrate.min.js"></script>
@@ -32,20 +36,23 @@
 	  <section>
 		
 		
+        
         <div class="container">
-          <c:forEach var="item" items="${sanInfodeList}">
-            
+        
+       
+          
+            <input type="hidden" id="sanInfo" value="${sanInfode.sanInfoId}">
               <div class="profile">
                   <img class="profile-image" src="./img/profile.png" alt=""/>    
               </div>
               <div class="moname">
-                  <p class="mimoname">산이름: ${item.sanName}</p>
+                  <p class="mimoname">산이름: ${sanInfode.sanName}</p>
               </div>
               <div class="weather">
                 <img class="weather-image" src="./svg/sun.svg">
               </div>
               <div class="moaddress">
-                  <p class="mimoaddress">주소: ${item.address}</p>
+                  <p class="mimoaddress">주소: ${sanInfode.address}</p>
               </div>
               <div class="like">
                   <img class="heart" src="./svg/heart.svg">
@@ -56,24 +63,13 @@
         
         
               <div class="content">
-                  <img  class="contentimg" src="">
-                  <input type="button"
-                      id="mozip"
-                      onclick="mozip()"
-                      value='등산모집'
-                      >
-
+                <button id="mozip" onclick="location.href='/party/{partyId}'">등산모집</button>
               </div>
                <div class="hugi">
-                  <img  class="hugiimg" src="">
-
-                  <input type="button"
-                      id="hugis"
-                      onclick="hugi()"
-                      value="등산후기"
-                      >
+               
+				<button id="hugi" onclick="location.href='/review/{reviewId}'">등산후기</button>
                 </div>
-          </c:forEach>
+         
         </div>
 
           
@@ -88,33 +84,25 @@
           <div id="content-section">
             <ul class="content-header-menu">
             <li class="content-header-menu-item" id="item-point">
-            <a href="./fianl1.html">소개</a>
+            <a>소개</a>
             </li>
-            <li class="content-header-menu-item">
-            <a href="./final2.html">등산로 정보</a>
+            <li class="content-header-menu-item" id="in">
+            <a>등산로 정보</a>
             </li>
-            <li class="content-header-menu-item">
-            <a href="./fianl3.html">날씨</a>
+            <li class="content-header-menu-item" id="wea">
+            <a>날씨</a>
             </li>
-            <li class="content-header-menu-item active">
-            <a href="./fianl4.html">주변맛집</a>
+            <li class="content-header-menu-item active" id="food">
+            <a>주변맛집</a>
             </li>
             </ul>
           </div>
 
-          <c:forEach var="item" items="${sanInfodeList}">
-            <div class="cotents">
-            <div class="content1">
-            <h2>${item.sanName}</h2>
-            
-
-            <p>${item.reason}</p>
-            <p>${item.details}</p>
-
-            </div>
-            </div>
-
-          </c:forEach>
+          <div id="module">
+	          
+	           
+         	</div>
+      	
 
 
 
@@ -134,19 +122,7 @@
 	 
 	<%@include file="/WEB-INF/views/common/footer.jsp"%>
 	</div>
-	
-	<script>
-	
-	${"#hugis"}.click(function() {
-		self.location = "/review/";
-	});
 
 
-${"#mozip"}.click(function() {
-		self.location = "/party/";
-	});
-
-	
-	</script>
 </body>
 </html>
