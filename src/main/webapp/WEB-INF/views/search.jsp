@@ -32,17 +32,17 @@
 				<div class="mountain-info">
 					<div class="info-title">
 						<h2>❤️ 산 ❤️</h2>
-						<a href="/info" class="more">더보기</a>
+						<a href="/info/search?query=${query}" class="more">더보기</a>
 					</div>
 					<div class="wrap">
 						<c:forEach var="item" items="${sanInfoList}">
 							<div class="item">
-								<a id="itemPath" href="/info/detail/${item.sanInfoId}">
+								<a id="itemPath" href="/info/${item.sanInfoId}">
 									<div class="item-info">
 										<h3 id="itemTitle">${item.sanName}</h3>
 										<div class="itemDetail">
 											<p id="itemContent">${item.details}</p>
-											<img id="itemImg" src="${empty item.img ? "/resources/img/leaf.png" : "/img/" + fn:substring(item.img, 10, 55)}" alt="img" />
+											<img id="itemImg" src="${empty item.img ? "/resources/img/leaf.png" : "/img/" + fn:substring(item.img, 12, 57)}" alt="img" />
 										</div>
 									</div>
 								</a>
@@ -55,17 +55,17 @@
 				<div class="recruit">
 					<div class="info-title">
 						<h2>❤️ 모집 글 ❤️</h2>
-						<a href="#" class="more">더보기</a>
+						<a href="/party/search?query=${query}" class="more">더보기</a>
 					</div>
 					<div class="wrap-recruit">
 						<c:forEach var="item" items="${partyList}">
-							<a href="/party/detail/${item.sanPartyId}">
+							<a href="/party/${item.sanPartyId}">
 							<div class="recruit-item">
 								<img class="user-img" src="${empty item.userPic ? 
-								"/resources/img/leaf.png" : imgBasePath += fn:substring(item.userPic, 10, 55)}" alt="img" />
+								"/resources/img/leaf.png" : imgBasePath += fn:substring(item.userPic, 12, 57)}" alt="img" />
 								<p class="user-name" id="userName">${item.nickName}</p>
 								<p class="mountain-name" id="mountainName">${item.sanName}</p>
-								<img class="recruit-img" src="${empty item.partyPic ? "/resources/img/leaf.png" : imgBasePath += fn:substring(item.partyPic, 10, 55)}
+								<img class="recruit-img" src="${empty item.partyPic ? "/resources/img/leaf.png" : imgBasePath += fn:substring(item.partyPic, 12, 57)}
 								" alt="img" />
 								<p class="recruit-title" id="title">${item.title}</p>
 								<p class="recruit-schedule-schedule">날짜:</p>
@@ -104,18 +104,18 @@
 				<div class="review">
 					<div class="info-title">
 						<h2>❤️ 후기 글 ❤️</h2>
-						<a href="#" class="more">더보기</a>
+						<a href="/review/search?query=${query}" class="more">더보기</a>
 					</div>
 					<div class="wrap">
 						<c:forEach var="item" items="${reviewList}">
 							<div class="item">
 								<a id="itemPath"
-									href="/review/detail/${item.sanReviewId}">
+									href="/review/${item.sanReviewId}">
 									<div class="item-info">
 										<h3 id="itemTitle">${item.title}</h3>
 										<div class="itemDetail">
 											<p id="itemContent">${item.contents}</p>
-											<img id="itemImg" src="${empty item.reviewPic ? "/resources/img/leaf.png" : imgBasePath += fn:substring(item.reviewPic, 10, 55)}
+											<img id="itemImg" src="${empty item.reviewPic ? "/resources/img/leaf.png" : imgBasePath += fn:substring(item.reviewPic, 12, 57)}
 											" alt="img" />
 										</div>
 									</div>

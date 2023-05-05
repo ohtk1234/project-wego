@@ -14,10 +14,9 @@ function loadMoreComments() {
 			lastComment: lastCommentId
 		},
 		success: function(data) {
-			console.log('로딩이 왜되냐고');
-			if (data.length != 0) {
-				$(".cmtcontainer").append(data);
-			} else {
+			$(".cmtcontainer").append(data);
+			
+			if(loadCnt < 5){
 				$(window).off('scroll');
 			}
 		},
@@ -50,7 +49,6 @@ function toggleMentionBtn(buttonElem) {
 		buttonElem.parent().next().next('.mentionList').show().children('.mention').show('fast');
 	} else {
 		$(".mentionbtn").val('↪︎답글');
-//		buttonElem.val('↪︎답글');
 		$(".mcontents").val('');
 		$('.mentionwrite, .mentionList, .mention').hide('fast');
 	}
@@ -58,7 +56,7 @@ function toggleMentionBtn(buttonElem) {
 
 $(() => { /* 새 댓글 post 전송  */
 	
-	$('textarea').off('keydown').on( 'keydown', function (){
+	$('#contents, .mcontents').off('keydown').on( 'keydown', function (){
    		$(this).css('height', 'auto');
     	$(this).height(this.scrollHeight);
   	});
@@ -89,22 +87,42 @@ $(() => { /* 새 댓글 post 전송  */
 				contents: $(this).prev().val()
 			},
 			success: function(data) {
-				setMessage("💬 댓글이 등록되었습니다.");
+				setMessage(data);
 				showModal();
 				setTimeout(hideModal, 700);
 				$(window).off('scroll').on('scroll', scrollCommentLoading);
 				$("#contents").val('');
-				$(".cmtcontainer").replaceWith(data);
-				$('#cmtcnt').text(commentCnt);
+				$.ajax({
+					url: "/comment/load",
+					type: "GET",
+					data:
+					{
+						targetGb: target.targetGb,
+						targetCd: target.targetCd,
+						amount: target.amount,
+						lastComment: 0
+					},
+					success: function(data) {
+						$(".cmtcontainer").html(data);
+						$('#cmtcnt').text(commentCnt);
+					},
+					error: () => {
+						console.log('댓글로딩오류 ');
+					}
+					});
 			},
 			error: function(data) {
+				$("#contents").val('');
 				if (data.status == 403) {
 					setMessage(data.responseText);
 					showModal();
 					setTimeout(hideModal, 5000);
+				} else{
+					setMessage('댓글을 등록할 수 없습니다. ');
+					showModal();
+					setTimeout(hideModal, 700);
 				}
 			}
-		});
 	});
 });
 
@@ -125,6 +143,8 @@ $(() => { /* 답글 관련 */
 				type: "GET",
 				data:
 				{
+					targetGb: target.targetGb,
+					targetCd: target.targetCd,
 					commentId: mentionId
 				},
 				success: function(data) {
@@ -142,7 +162,7 @@ $(() => { /* 답글 관련 */
 				var mentionCnt = $(this).parent().prev().find('#mentionCnt');
 			
 				$.ajax({
-					url: "/comment/reply",
+					url: "/comment/register",
 					type: "POST",
 					data:
 					{
@@ -151,8 +171,8 @@ $(() => { /* 답글 관련 */
 						mentionId: mentionId,
 						contents: $(this).prev().val()
 					},
-					success: function() {
-						setMessage("️💬 답글이 등록되었습니다.");
+					success: function(data) {
+						setMessage(data);
 						showModal();
 						setTimeout(hideModal, 700);
 						$('.mcontents').val('');
@@ -161,6 +181,8 @@ $(() => { /* 답글 관련 */
 							url: "/comment/mention",
 							type: "GET",
 							data: {
+								targetGb: target.targetGb,
+								targetCd: target.targetCd,
 								commentId : mentionId
 							},
 							success: function(data){
@@ -171,17 +193,19 @@ $(() => { /* 답글 관련 */
 						});
 					},
 					error: function(data) {
+						$('.mcontents').val('');
 						if (data.status == 403) {
 							setMessage(data.responseText);
 							showModal();
 							setTimeout(hideModal, 5000);
 						} else{
-							setMessage('뭔데 '); /**** */
+							setMessage('답글을 등록할 수 없습니다. ');
 							showModal();
 							setTimeout(hideModal, 700);
 						}
 					}
 				});
+			});
 			});
   	});
   	/* 취소 클릭 시 멘션 작성 창 off  */
@@ -222,7 +246,6 @@ $(() => { /* 수정 관련 */
 		/* 댓글 수정 폼 off  */
 		$("input[name='updatecls']").off('click').on('click', function() {
 
-			/* 수정 중 취소 눌렀을 때 다른 수정버튼 재활성화  */
 			$(".modifycmt").prop('disabled', false);
 			
 			modifying.replaceWith(target);
@@ -241,8 +264,8 @@ $(() => { /* 수정 관련 */
 					contents : $(this).parent().siblings(".update").val()
 				}),
 				contentType :'application/JSON',
-				success : function(){
-					setMessage("✏️ 댓글이 수정되었습니다.");
+				success : function(data){
+					setMessage(data);
 		 			showModal();
 		 			setTimeout(hideModal, 700);
 		 			
@@ -251,7 +274,7 @@ $(() => { /* 수정 관련 */
 					$(".modifycmt").prop('disabled', false);
 				},
 				error : function(){
-		 			setMessage("⚠️ 수정 실패."); // 이거 고쳐ㅕㅕㅕㅕㅕㅕㅕㅕㅕ
+		 			setMessage("⚠️ 수정 실패.");
 		 			showModal();
 		 			setTimeout(hideModal, 700);
 				}	

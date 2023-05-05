@@ -2,18 +2,16 @@ package org.zerock.wego.service.common;
 
 import java.util.concurrent.LinkedBlockingDeque;
 
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.zerock.wego.domain.common.CommentDTO;
 import org.zerock.wego.domain.common.CommentViewVO;
+import org.zerock.wego.domain.common.NotificationDTO;
 import org.zerock.wego.domain.common.PageInfo;
 import org.zerock.wego.exception.NotFoundPageException;
-import org.zerock.wego.exception.OperationFailException;
 import org.zerock.wego.exception.ServiceException;
 import org.zerock.wego.mapper.CommentMapper;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.zerock.wego.mapper.NotificationMapper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -25,6 +23,7 @@ import lombok.extern.log4j.Log4j2;
 public class CommentService {
 
 	private final CommentMapper commentMapper;
+	private final NotificationMapper notificationMapper;
 
 	
 	// 댓글 총합
@@ -44,7 +43,7 @@ public class CommentService {
 	
 	// 댓글 offset 로딩
 	public LinkedBlockingDeque<CommentViewVO> getCommentOffsetByTarget(PageInfo target, Integer lastCommentId)
-			throws ServiceException {
+			throws RuntimeException {
 //		log.trace("getCommentsOffsetByTarget({}, {}) invoked.", target, lastCommentId);
 
 		try {
@@ -59,81 +58,73 @@ public class CommentService {
 				return comments;
 			} // if-else
 
-		} catch (Exception e) {
+		} catch (RuntimeException e) {
 			throw new ServiceException(e);
 		} // try-catch
 	}// getCommentsOffsetByTarget
 		
 	// 댓글의 멘션 전체 조회
-	public LinkedBlockingDeque<CommentViewVO> getMentionsByCommentId(Integer commentId) throws Exception {
+	public LinkedBlockingDeque<CommentViewVO> getMentionsByCommentId(Integer commentId) throws RuntimeException {
 
 			try {
 				LinkedBlockingDeque<CommentViewVO> mentions 
 							= this.commentMapper.selectMentionsByCommentId(commentId);
-
-					return mentions;
+				
+				return mentions;
 
 			} catch (NullPointerException e) {
 				return null;
 				
-			} catch (Exception e) {
+			} catch (RuntimeException e) {
 				throw new ServiceException(e);
 			} // try-catch
 		}// getCommentsOffsetByTarget
 
 	
 	// 댓글 코드로 조회 
-	public CommentViewVO getById(Integer commentId) throws ServiceException{
+	public CommentViewVO getById(Integer commentId) throws RuntimeException{
 //		log.trace("getCommentByCommentId({}}) invoked.", commentId);
 		
 		try {
 			CommentViewVO comment = this.commentMapper.selectById(commentId);
 			
 			return comment;
-
-		}catch(Exception e) {
+		} catch(NullPointerException e) {
+			return null;
+			
+		} catch(RuntimeException e) {
 			throw new ServiceException(e);
 		}// try-catch
 	}// getCommentsOffsetByTarget
 	
 	
 	// 댓글/멘션 작성 
-	public void registerCommentOrMention(CommentDTO dto) throws Exception{
+	public void registerCommentOrMention(CommentDTO dto) throws RuntimeException{
 //		log.trace("isCommentRegister({}) invoked", dto);
 		
 		try {
-			if(dto.getMentionId() == null) {
-				
-				this.commentMapper.insertComment(dto);
-			}else {
-				
-				this.commentMapper.insertMention(dto);
+			if(dto.getMentionId() != null) {
+				dto.setCommentGb("MENTION");
 			}// if-else 
 			
-			boolean isExist 
-				= (this.commentMapper.selectById(dto.getCommentId()) != null);
-			
-			if(!isExist) {
-				throw new OperationFailException();
-			}// if
-			
+			this.commentMapper.insertComment(dto);
 			this.commentMapper.updateTargetCommentCnt(dto, "INSERT");
 			
-		} catch(OperationFailException e) {
-			throw e;
 			
-		}catch(Exception e) {
+			this.notificationMapper.insertCommentByCommentIdAndUserId(dto.getCommentId(), dto.getUserId());
+			
+		} catch(RuntimeException e) {
 			throw new ServiceException(e);
-			
 		}// try-catch
 	}// registerComment
 	
 	
 	// 댓글/멘션 삭제
-	public void removeCommentOrMention(Integer commentId) throws ServiceException {
+	public void removeCommentOrMention(Integer commentId) throws RuntimeException {
 //		log.trace("removeCommentOrMention() invoked.");
 		
 		try {
+			
 			CommentViewVO originComment = this.commentMapper.selectById(commentId);
 			
 			if(originComment == null) {
@@ -148,20 +139,14 @@ public class CommentService {
 				this.removeMention(commentId);
 			} // if-else
 			
-			boolean isExist = this.commentMapper.isExist(commentId);
-			
-			if(isExist) {
-				throw new OperationFailException(); 
-			}// if
-			
 			CommentDTO dto = CommentDTO.convertCommentViewVOToCommentDTO(originComment);
 			
 			this.commentMapper.updateTargetCommentCnt(dto, "DELETE");
 			
-		} catch (NotFoundPageException | OperationFailException e) {
+		} catch (NotFoundPageException e) {
 			throw e;
 
-		} catch (Exception e) {
+		} catch (RuntimeException e) {
 			throw new ServiceException(e);
 			
 		}// try-catch
@@ -169,7 +154,7 @@ public class CommentService {
 	
 	
 	// 댓글 삭제
-	public void removeComment(Integer commentId) throws Exception {
+	public void removeComment(Integer commentId) throws RuntimeException {
 //		log.trace("removeComment() invoked.");
 		try {
 			boolean isMentionExist = (this.commentMapper.hasMentionById(commentId) != null);
@@ -187,7 +172,7 @@ public class CommentService {
 				this.commentMapper.deleteById(commentId);
 			}// if-else 
 			
-		} catch (Exception e) {
+		} catch (RuntimeException e) {
 			throw new ServiceException(e);
 		}// try-catch 
 		
@@ -195,7 +180,7 @@ public class CommentService {
 	
 	
 	// 멘션 삭제
-	public void removeMention(Integer commentId) throws ServiceException {
+	public void removeMention(Integer commentId) throws RuntimeException {
 //		log.trace("removeMention() invoked.");
 
 		try {
@@ -203,27 +188,28 @@ public class CommentService {
 
 			this.commentMapper.deleteById(commentId);
 			
+			
 			CommentViewVO parentComment = this.commentMapper.selectById(originComment.getMentionId());
 			
-			boolean isMentionExist = (this.commentMapper.hasMentionById(parentComment.getCommentId()) != null);
-			
-			if (!isMentionExist && parentComment.getStatus().equals("Y")) {
-				CommentDTO comment = CommentDTO.builder()
-												.commentId(parentComment.getCommentId())
-												.contents("삭제된 댓글입니다.")
-												.status("D").build();
+			if(parentComment.getStatus().equals("Y")) {
 				
-				this.commentMapper.updateComment(comment);
-			} // if
+				boolean isMentionExist 
+					= (this.commentMapper.hasMentionById(parentComment.getCommentId()) != null);
+				
+				if(!isMentionExist) {
+					
+					this.commentMapper.deleteById(parentComment.getCommentId());
+				}// if
+			}// if
 		
-		} catch (Exception e) {
+		} catch (RuntimeException e) {
 			throw new ServiceException(e);
 		} // try-catch
 	}// removeComment
 
 	
 	// 댓글 수정 
-	public void modify(CommentDTO dto) throws ServiceException{
+	public void modify(CommentDTO dto) throws RuntimeException{
 //		log.trace("isModified({}) invoked", dto);
 
 		try {
@@ -237,37 +223,19 @@ public class CommentService {
 			
 			this.commentMapper.updateComment(dto); 
 			
-		}catch (Exception e) {
+		}catch (RuntimeException e) {
 			throw new ServiceException(e);
 		}// try-catch
 	}// modifyComment
 	
-	public void removeAllByTarget(String targetGb, Integer targetCd) throws Exception{
+	public void removeAllByTarget(String targetGb, Integer targetCd) throws RuntimeException{
 		
 		try {
 			this.commentMapper.deleteAllByTarget(targetGb, targetCd);
 			
-		} catch(Exception e) {
+		} catch(RuntimeException e) {
 			throw new ServiceException(e);
 		}// try-catch
 	}// removeAllbyTarget
-	
-	
-	
-	// 댓글 영구 삭제
-//	@Async
-//	@Scheduled(fixedRate = 10000)
-//	public boolean isClear() throws ServiceException{
-//		
-//		try {
-////			boolean isClear = (this.commentMapper.deleteDeadComment() == 1);
-//			/*생각해보니까  이거 아닌데...? 뭐어차피 쿼츠 배우면 바꿀꺼니까 */
-//			
-////			return isClear;
-//			
-//		}catch (Exception e) {
-//			throw new ServiceException(e);
-//		}// try-catch
-//	}// isCleared
 	
 }// end class

@@ -9,7 +9,6 @@ import java.util.concurrent.LinkedBlockingDeque;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.ModelAndView;
+import org.zerock.wego.config.SessionConfig;
 import org.zerock.wego.domain.common.CommentViewVO;
 import org.zerock.wego.domain.common.FavoriteDTO;
 import org.zerock.wego.domain.common.FileDTO;
@@ -31,14 +30,16 @@ import org.zerock.wego.domain.review.ReviewDTO;
 import org.zerock.wego.domain.review.ReviewViewVO;
 import org.zerock.wego.exception.AccessBlindException;
 import org.zerock.wego.exception.ControllerException;
+import org.zerock.wego.service.badge.BadgeGetService;
+import org.zerock.wego.exception.NotFoundPageException;
 import org.zerock.wego.service.common.CommentService;
 import org.zerock.wego.service.common.FavoriteService;
 import org.zerock.wego.service.common.FileService;
-import org.zerock.wego.service.common.ReportService;
 import org.zerock.wego.service.info.SanInfoService;
 import org.zerock.wego.service.review.ReviewService;
 import org.zerock.wego.verification.ReviewValidator;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
@@ -57,12 +58,12 @@ public class ReviewController {
 	private final FileService fileService;
 	private final FavoriteService favoriteService;
 	private final ReviewValidator reviewValidator;
-	private final ReportService reportService;
+	private final BadgeGetService badgeGetService;
 	
 
-	@GetMapping("")
+	@GetMapping
 	public String openReview(Model model) throws ControllerException {
-		log.trace("openReview({}) invoked.", model);
+		log.trace("openReview(model) invoked.");
 
 		try {
 			List<ReviewViewVO> reviewList = this.reviewService.getList();
@@ -70,19 +71,19 @@ public class ReviewController {
 			model.addAttribute("reviewList", reviewList);
 
 			return "review/review";
-		} catch (Exception e) {
+		} catch (RuntimeException e) {
 			throw new ControllerException(e);
 		} // try-catch
 	} // openReview
 
 	@GetMapping(path="/{reviewId}")
-	public ModelAndView showDetailById(@PathVariable("reviewId")Integer reviewId,
-									@SessionAttribute("__AUTH__")UserVO user,
-									PageInfo target, ModelAndView mav) throws Exception{
-		log.trace("showDetail({}, {}) invoked.", reviewId, target);
+	public String showDetailById(@PathVariable("reviewId")Integer reviewId,
+									@SessionAttribute(SessionConfig.AUTH_KEY_NAME)UserVO user,
+									PageInfo pageInfo, Model model, FavoriteDTO favorite) throws RuntimeException, JsonProcessingException{
+		log.trace("showDetail(reviewId, user, pageInfo, model, favorite) invoked.");
 
-			target.setTargetGb("SAN_REVIEW");
-			target.setTargetCd(reviewId);
+			pageInfo.setTargetGb("SAN_REVIEW");
+			pageInfo.setTargetCd(reviewId);
 			
 			ReviewViewVO review = this.reviewService.getById(reviewId);
 			Integer userId = user.getUserId();
@@ -94,7 +95,6 @@ public class ReviewController {
 			List<FileVO> fileList = this.fileService.getList("SAN_REVIEW", reviewId);
 			
 			// TO_DO : 좋아요 바뀌면 바꿔야됨 
-			FavoriteDTO favorite = new FavoriteDTO();
 			favorite.setTargetGb("SAN_REVIEW");
 			favorite.setTargetCd(reviewId);
 			favorite.setUserId(userId);
@@ -102,45 +102,42 @@ public class ReviewController {
 			boolean isFavorite = this.favoriteService.isFavoriteInfo(favorite);
 
 			LinkedBlockingDeque<CommentViewVO> comments 
-							= this.commentService.getCommentOffsetByTarget(target, 0);
+							= this.commentService.getCommentOffsetByTarget(pageInfo, 0);
 
-			/*후기글 사진 넣는거 필요함 */
-			mav.addObject("review", review);
-			mav.addObject("isFavorite", isFavorite);
-			mav.addObject("fileList", fileList);
+			model.addAttribute("review", review);
+			model.addAttribute("isFavorite", isFavorite);
+			model.addAttribute("fileList", fileList);
+			model.addAttribute("comments", comments);
 			
-			if(comments != null) {
 				
-				mav.addObject("comments", comments);
-			}// if
-			
 			ObjectMapper objectMapper = new ObjectMapper();
-			String targetJson = objectMapper.writeValueAsString(target);
-			mav.addObject("target", targetJson);
-
-			mav.setViewName("/review/detail");
+			String pageInfoJson = objectMapper.writeValueAsString(pageInfo);
 			
-			return mav;
+			model.addAttribute("target", pageInfoJson);
+
+			return "/review/detail";
 	}// showDetailById
 
 	@DeleteMapping(path= "/{reviewId}", produces= "text/plain; charset=UTF-8")
 	public ResponseEntity<String> removeById(@PathVariable("reviewId")Integer reviewId) throws ControllerException{
-		log.trace("removeById({}) invoked.", reviewId);
+		log.trace("removeById(reviewId) invoked.");
 
 		try {
 			this.reviewService.removeById(reviewId);
-//			this.reportService.removeAllByTarget("SAN_REVIEW", reviewId);
-//			this.fileService.isRemoveByTarget("SAN_REVIEW", reviewId);
-//			this.favoriteService.removeAllByTarget("SAN_REVIEW", reviewId);
+
 			return ResponseEntity.ok("후기글이 삭제되었습니다.️");
 
-		} catch (Exception e) {
+		} catch(NotFoundPageException e) {
+			return ResponseEntity.notFound().build();
+			
+		} catch (RuntimeException e) {
 			return ResponseEntity.badRequest().build();
 		}// try-catch
 	}// removeReview
 
 	@GetMapping(path = "/modify/{reviewId}")
-	public String modify(@SessionAttribute("__AUTH__") UserVO auth, @PathVariable("reviewId") Integer reviewId,
+	public String modify(@SessionAttribute(SessionConfig.AUTH_KEY_NAME) UserVO auth, 
+			@PathVariable("reviewId") Integer reviewId,
 			Model model) throws Exception {
 		log.trace("modify(auth, reviewId, model) invoked.");
 
@@ -165,14 +162,14 @@ public class ReviewController {
 
 	@PostMapping("/modify")
 	public ResponseEntity<Map<String, String>> modify(
-			@SessionAttribute("__AUTH__") UserVO auth, Integer sanReviewId, String sanName,
+			@SessionAttribute(SessionConfig.AUTH_KEY_NAME) UserVO auth, Integer sanReviewId, String sanName,
 			@RequestParam(value = "imgFiles", required = false) List<MultipartFile> newImageFiles,
 			@RequestParam(value = "oldImgFiles", required = false) String oldImageFiles,
 			@RequestParam(value = "imgOrder", required = false) String imageOrder, 
 			ReviewDTO reviewDTO, BindingResult bindingResult,
 			FileDTO fileDTO)
 			throws ControllerException {
-		log.trace("modify(auth, sanReviewId, sanName, newImageFiles, oldImageFiles, reviewDTO, fileDTO) invoked.");
+		log.trace("modify(auth, sanReviewId, sanName, newImageFiles, oldImageFiles, imageOrder, reviewDTO, bindingResult, fileDTO) invoked.");
 
 		try {
 			Integer sanId = this.sanInfoService.getIdBySanName(sanName);
@@ -209,29 +206,38 @@ public class ReviewController {
 	} // modify
 
 	@GetMapping("/register")
-	public String register(@SessionAttribute("__AUTH__") UserVO auth) {
-		log.trace("register() invoked.");
+	public String register(@SessionAttribute(SessionConfig.AUTH_KEY_NAME) UserVO auth) {
+		log.trace("register(auth) invoked.");
 
 		return "/review/register";
 	} // register
 
 	@PostMapping("/register")
 	public ResponseEntity<Map<String, String>> register(
-			@SessionAttribute("__AUTH__") UserVO auth, String sanName,
+			@SessionAttribute(name = SessionConfig.AUTH_KEY_NAME, required = false) UserVO auth, String sanName,
 			@RequestParam(value = "imgFiles", required = false) List<MultipartFile> imageFiles, 
 			ReviewDTO reviewDTO, BindingResult bindingResult,
 			FileDTO fileDTO) throws ControllerException {
-		log.trace("register(auth, sanName, imageFiles, reviewDTO, fileDTO, posted, response) invoked.");
+		log.trace("register(auth, sanName, imageFiles, reviewDTO, bindingResult, fileDTO) invoked.");
 
 		try {
+			Map<String, String> state = new HashMap<>();
+			
+			log.info("*****register - auth: {}", auth);
+			
+			if (auth == null) {
+				state.put("state", "logout");
+				state.put("redirectUrl", "/login");
+				
+				return new ResponseEntity<>(state, HttpStatus.OK);
+			} // if
+			
 			Integer sanId = this.sanInfoService.getIdBySanName(sanName);
 
 			reviewDTO.setSanInfoId(sanId);
 			reviewDTO.setUserId(auth.getUserId());
 			
 			reviewValidator.validate(reviewDTO, bindingResult);
-	        
-	        Map<String, String> state = new HashMap<>();
 
 	        if (bindingResult.hasFieldErrors()) { 
 	        	log.info("***** FieldErrors *****: {}", bindingResult.getAllErrors());
@@ -248,6 +254,8 @@ public class ReviewController {
 						reviewDTO.getSanReviewId(), fileDTO);
 				log.info("isImageUploadSuccess: {}", isImageUploadSuccess);
 			} // if
+			
+			badgeGetService.register(sanId, auth.getUserId());
 
 			state.put("state", "successed");
 			state.put("redirectUrl", "/review/" + reviewDTO.getSanReviewId());

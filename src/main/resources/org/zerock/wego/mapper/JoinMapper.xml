@@ -17,8 +17,6 @@
     		join_tb
     	WHERE 
     		san_party_id = #{sanPartyId}
-    		AND
-    		status = 'Y'
     </select>
     
     <!-- ************ 참여 여부 확인  ************ -->
@@ -27,7 +25,7 @@
     	resultType="String">
     	
     	SELECT 
-    		status
+    		1
     	FROM 
     		join_tb
     	WHERE 
@@ -46,20 +44,22 @@
     		(#{sanPartyId}, #{userId})
     </insert>
     
-    <!-- ************ 참여 신청/취소 토글 ************ -->
-    <update 
-    	id="update">
+    <delete
+    	id="delete">
     	
-    	UPDATE
+    	DELETE
+    	FROM
     		join_tb
-    	SET
-    		status = #{status}
     	WHERE
-    		san_party_id = #{dto.sanPartyId}
+    		san_party_id = #{sanPartyId}
     		AND
-    		user_id = #{dto.userId}
-    </update>
+    		user_id = #{userId}	
+    </delete>
     
+    <select id="selectUserIdsBySanPartyId" parameterType="java.lang.Integer" >
+   		SELECT user_id FROM join_tb WHERE san_party_id = #{sanPartyId}
+    </select>
+
   </mapper>
   
   

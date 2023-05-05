@@ -3,9 +3,8 @@ package org.zerock.wego.service.common;
 import java.io.File;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -33,20 +32,24 @@ public class FileService {
 		log.trace("isImageRegister() invoked.");
 
 		try {
+			// DB에 저장할 이미지 정보 목록
+			List<FileDTO> imageFiles = new ArrayList<>();
+			
+			// 이미지 업로드 날짜 폴더 생성
 			String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-			String basePath = "C:/upload/" + today;
+			String basePath = "/opt/upload/" + today;
 			File Folder = new File(basePath);
 
 			if (!Folder.exists()) {
 				Folder.mkdir();
 			} // if
 
+			// DB에 저장하기 위한 이미지 정보 처리
 			for (int order = 0; order < imgFiles.size(); order++) {
-				if (!"".equals(imgFiles.get(order).getOriginalFilename())) {
+				if (!imgFiles.get(order).getOriginalFilename().equals("")) {
 					String originalName = imgFiles.get(order).getOriginalFilename();
 					String uuid = UUID.randomUUID().toString();
-
 					String imgPath = basePath + "/" + uuid;
 
 					imgFiles.get(order).transferTo(new File(imgPath));
@@ -60,10 +63,11 @@ public class FileService {
 							.status(order + 1)
 							.build();
 
-					boolean isFileUploadSuccess = this.isRegister(dto);
-					log.info("isFileUploadSuccess: {}", isFileUploadSuccess);
+					imageFiles.add(dto);
 				} // if
 			} // for
+			
+			this.registerImageList(imageFiles);
 
 			return true;
 		} catch (Exception e) {
@@ -75,7 +79,7 @@ public class FileService {
 			String targetGb, Integer targetCd, FileDTO fileDTO) throws ServiceException {
 		log.trace("isChangeImage() invoked.");
 		
-		try {			
+		try {					
 			// 기존 이미지 정보 불러오기
 			List<FileVO> fileVO = this.getList(targetGb, targetCd);
 
@@ -92,6 +96,9 @@ public class FileService {
 			if(!fileVO.isEmpty()) {
 				this.removeNotMatchOldFileByFileVOAndOldFileList(fileVO, oldFiles);
 			} // if
+			
+			// DB에 저장할 이미지 정보 목록
+			List<FileDTO> imageFiles = new ArrayList<>();
 			
 			// 기존 이미지 정보 중 DB에 저장할 이미지 정보 추출
 			if (oldFiles != null) {
@@ -110,7 +117,7 @@ public class FileService {
 										.status(fileOrder + 1)
 										.build();
 								
-								this.fileMapper.insert(dto);
+								imageFiles.add(dto);
 							} // if
 						});
 					} // if
@@ -120,6 +127,7 @@ public class FileService {
 			if(newFiles != null ) {
 				// 이미지를 저장할 경로 지정(이전 경로 중 하나에서 날짜 추출)
 				String basePath = this.getOldBasePath(fileVO.get(0).getPath());
+				log.info("***** basePath: {}", basePath);
 				
 				newFiles.forEach(file -> {
 					int fileOrder = order.indexOf(file.getOriginalFilename());
@@ -145,11 +153,13 @@ public class FileService {
 								.status(fileOrder + 1)
 								.build();
 						
-						this.fileMapper.insert(dto);
+						imageFiles.add(dto);
 					} // if
 				});
 			} // if
 
+			this.registerImageList(imageFiles);
+			
 			return true;
 		} catch (Exception e) {
 			throw new ServiceException(e);
@@ -178,12 +188,19 @@ public class FileService {
 	} // removeNotMatchOldFileByFileVOAndOldFileList
 	
 	// 이미지를 저장할 경로 지정(경로에서 날짜 추출)
-	// ex) C:/upload/date/uuid => date
+	// ex) /opt/upload/date/uuid
 	public String getOldBasePath(String path) {
-		int start = path.lastIndexOf("/") - 8;
-		String date = path.substring(start, start + 8);
-		return "C:/upload/" + date;
+		return path.substring(0, path.lastIndexOf("/"));
 	} // getOldBasePath
+	
+	@Transactional
+	public void registerImageList(List<FileDTO> dto) {
+		log.trace("registerImageList(dto) invoked.");
+		
+		dto.forEach(item -> {
+			this.isRegister(item);
+		});
+	} // registerImageList
 	
 	public List<FileVO> getList(String targetGb, Integer targetCd) throws ServiceException {
 		log.trace("getList() invoked.");

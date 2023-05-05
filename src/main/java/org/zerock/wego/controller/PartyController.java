@@ -9,7 +9,6 @@ import java.util.concurrent.LinkedBlockingDeque;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,7 +19,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.ModelAndView;
+import org.zerock.wego.config.SessionConfig;
+import org.zerock.wego.domain.chat.ChatRoomDTO;
 import org.zerock.wego.domain.common.CommentViewVO;
 import org.zerock.wego.domain.common.FavoriteDTO;
 import org.zerock.wego.domain.common.FileDTO;
@@ -33,6 +33,7 @@ import org.zerock.wego.exception.AccessBlindException;
 import org.zerock.wego.exception.ControllerException;
 import org.zerock.wego.exception.NotFoundPageException;
 import org.zerock.wego.exception.OperationFailException;
+import org.zerock.wego.service.common.ChatService;
 import org.zerock.wego.service.common.CommentService;
 import org.zerock.wego.service.common.FavoriteService;
 import org.zerock.wego.service.common.FileService;
@@ -41,6 +42,7 @@ import org.zerock.wego.service.party.JoinService;
 import org.zerock.wego.service.party.PartyService;
 import org.zerock.wego.verification.PartyValidator;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
@@ -60,11 +62,12 @@ public class PartyController {
 	private final FileService fileService;
 	private final FavoriteService favoriteService;
 	private final PartyValidator partyValidator;
+	private final ChatService chatService;
   
 	
-	@GetMapping("")
+	@GetMapping
 	public String openParty(Model model) throws ControllerException {
-		log.trace("openParty({}) invoked.", model);
+		log.trace("openParty(model) invoked.");
 
 		try {
 			List<PartyViewVO> partyList = this.partyService.getList();
@@ -80,15 +83,14 @@ public class PartyController {
 	
 	// 모집글 상세 조회 
 	@GetMapping("/{partyId}") 
-	public ModelAndView showDetailById(@PathVariable("partyId")Integer partyId, 
-										@SessionAttribute("__AUTH__")UserVO user,
-										PageInfo pageInfo) throws Exception{
-	log.trace("showDetailById() invoked.");
+	public String showDetailById(@PathVariable("partyId")Integer partyId, 
+						@SessionAttribute(SessionConfig.AUTH_KEY_NAME)UserVO user,
+						PageInfo pageInfo, Model model, 
+						JoinDTO join, FavoriteDTO favorite) throws RuntimeException, JsonProcessingException{
+	log.trace("showDetailById(partyId, user, pageInfo, model, join, favorite) invoked.");
 		
 			pageInfo.setTargetGb("SAN_PARTY");
 			pageInfo.setTargetCd(partyId);
-			
-			ModelAndView mav = new ModelAndView();
 			
 			PartyViewVO party = this.partyService.getById(partyId);
 			Integer userId = user.getUserId();
@@ -97,14 +99,12 @@ public class PartyController {
 				throw new AccessBlindException();
 			} // if
 			
-			JoinDTO join = new JoinDTO();
 			join.setSanPartyId(partyId);
 			join.setUserId(userId);
 			
 			boolean isJoin = this.joinService.isJoin(join);
 			
 			// TO_DO : 좋아요구현되면 바꾸기 
-			FavoriteDTO favorite = new FavoriteDTO();
 			favorite.setTargetGb("SAN_PARTY");
 			favorite.setTargetCd(partyId);
 			favorite.setUserId(userId);
@@ -114,47 +114,43 @@ public class PartyController {
 			LinkedBlockingDeque<CommentViewVO> comments 
 						= commentService.getCommentOffsetByTarget(pageInfo, 0);
 
-			
-			mav.addObject("party", party);
-			mav.addObject("isJoin", isJoin);
-			mav.addObject("isFavorite", isFavorite);
-			
-			if(comments != null) {
-				mav.addObject("comments", comments);
-			}// if
+			model.addAttribute("party", party);
+			model.addAttribute("isJoin", isJoin);
+			model.addAttribute("isFavorite", isFavorite);
+			model.addAttribute("comments", comments);
 			
 			ObjectMapper objectMapper = new ObjectMapper();
 			String pageInfoJson = objectMapper.writeValueAsString(pageInfo);
-			mav.addObject("target", pageInfoJson);
 
-			mav.setViewName("/party/detail");
+			model.addAttribute("target", pageInfoJson);
 
-			return mav;
-
+			return "/party/detail";
 	}// showDetailById
 	
 	// 모집글 삭제
-	@Transactional
 	@DeleteMapping(path = "/{partyId}", produces = "text/plain; charset=UTF-8")
-	public ResponseEntity<String> removeById(@PathVariable("partyId") Integer partyId) throws Exception {
-		log.trace("removeById({}) invoked.", partyId);
+	public ResponseEntity<String> removeById(@PathVariable("partyId") Integer partyId) throws RuntimeException {
+		log.trace("removeById(partyId) invoked.");
 
 		try {
 			this.partyService.removeById(partyId);
 
 			return ResponseEntity.ok("모집글이 삭제되었습니다.️");
 
-		} catch (NotFoundPageException | OperationFailException e) { // 그냥 모든 예외 상관없이 다잡아도 되는건가?
-			return ResponseEntity.badRequest().build();
-		} // try-catch
+		} catch (NotFoundPageException e) {
+			return ResponseEntity.notFound().build();
+			
+		} catch (RuntimeException e){
+			return ResponseEntity.badRequest().build();// try-catch 
+		}// try-catch
 	}// removeById
 		
 	@GetMapping(path = "/modify/{partyId}")
 	public String modify(
-			@SessionAttribute("__AUTH__")UserVO auth,
+			@SessionAttribute("SessionConfig.AUTH_KEY_NAME")UserVO auth,
 			@PathVariable("partyId") Integer partyId, Model model) 
 			throws ControllerException { 
-		log.trace("modify({}, {}, {}) invoked.", auth, partyId, model);
+		log.trace("modify(auth, partyId, model) invoked.");
 
 		try {
 			Integer postUserId = this.partyService.getUserIdByPartyId(partyId);
@@ -174,12 +170,12 @@ public class PartyController {
 
 	@PostMapping("/modify")
 	public ResponseEntity<Map<String, String>> modify(
-			@SessionAttribute("__AUTH__")UserVO auth,
+			@SessionAttribute(SessionConfig.AUTH_KEY_NAME)UserVO auth,
 			Integer sanPartyId, String sanName, 
 			@RequestParam(value = "imgFile", required = false)List<MultipartFile> imageFiles, 
 			PartyDTO partyDTO, BindingResult bindingResult, FileDTO fileDTO
 			) throws ControllerException { 
-		log.trace("PostMapping - modify() invoked.");
+		log.trace("modify(auth, sanPartyId, sanName, imageFiles, partyDTO, bindingResult, fileDTO) invoked.");
 
 		try {			
 			Integer sanId = this.sanInfoService.getIdBySanName(sanName);
@@ -219,19 +215,19 @@ public class PartyController {
 	} // modify
 
 	@GetMapping("/register")
-	public String register(@SessionAttribute("__AUTH__") UserVO auth) {
-		log.trace("register() invoked.");
+	public String register(@SessionAttribute(SessionConfig.AUTH_KEY_NAME) UserVO auth) {
+		log.trace("register(auth) invoked.");
 
 		return "/party/register";
 	} // register
 
 	@PostMapping("/register")
 	public ResponseEntity<Map<String, String>> register(
-			@SessionAttribute("__AUTH__")UserVO auth, String sanName, 
+			@SessionAttribute(SessionConfig.AUTH_KEY_NAME)UserVO auth, String sanName, 
 			@RequestParam(value = "imgFile", required = false)List<MultipartFile> imageFiles,
-			PartyDTO partyDTO, BindingResult bindingResult, FileDTO fileDTO, JoinDTO joinDTO
-			) throws ControllerException {
-		log.trace("PostMapping - register() invoked.");
+			PartyDTO partyDTO, BindingResult bindingResult, FileDTO fileDTO, JoinDTO joinDTO,
+			ChatRoomDTO roomDTO) throws ControllerException {
+		log.trace("register(auth, sanName, imageFiles, partyDTO, bindingResult, fileDTO, joinDTO, roomDTO) invoked.");
 
 		try {			
 			partyDTO.setUserId(auth.getUserId());
@@ -264,7 +260,12 @@ public class PartyController {
 			joinDTO.setSanPartyId(partyDTO.getSanPartyId());
 			joinDTO.setUserId(auth.getUserId());
 			this.joinService.create(joinDTO);
-
+			
+			roomDTO.setChatRoomId(partyDTO.getSanPartyId());
+			roomDTO.setTitle(partyDTO.getTitle());
+			roomDTO.setUserId(auth.getUserId());
+			this.chatService.createChatRoom(roomDTO);
+			
 			state.put("state", "successed");
 			state.put("redirectUrl", "/party/" + partyDTO.getSanPartyId());
 			
@@ -276,14 +277,14 @@ public class PartyController {
 	
 	// 참여 신청/취소 토글
 	@PostMapping(path = "/{partyId}/join", produces = "text/plain; charset=UTF-8")
-	ResponseEntity<String> joinOrCancleByPartyId(@PathVariable Integer partyId,
-											@SessionAttribute("__AUTH__") UserVO user) throws Exception {
-		log.trace("joinOrCancleByPartyId() invoked.");
+	ResponseEntity<String> toggleJoinOrCancleById(@PathVariable Integer partyId,
+							@SessionAttribute(SessionConfig.AUTH_KEY_NAME) UserVO user, 
+							JoinDTO join) throws Exception {
+		log.trace("toggleJoinOrCancleById(partyId, user, join) invoked.");
 
 		try {
 			Integer userId = user.getUserId();
 
-			JoinDTO join = new JoinDTO();
 			join.setSanPartyId(partyId);
 			join.setUserId(userId);
 

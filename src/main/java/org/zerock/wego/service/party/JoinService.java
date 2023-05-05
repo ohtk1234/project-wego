@@ -28,7 +28,7 @@ public class JoinService {
 		
 		String status = this.joinMapper.selectById(dto);
 		
-		return (status != null && status.equals("Y"));
+		return (status != null);
 	}// cancleJoin
 	
 	
@@ -38,89 +38,47 @@ public class JoinService {
 		return this.joinMapper.selectTotalCount(dto);
 	}// currentCount 
 	
-	
+
 	// 모집 참여 토글
-	public void createOrCancle(JoinDTO dto) throws Exception {
-//		log.trace("isJoinCreated({}, {}) invoked.", partyId, userId);
+		public void createOrCancle(JoinDTO dto) throws Exception {
+//			log.trace("isJoinCreated({}, {}) invoked.", partyId, userId);
 		
-		/*
-		 * party isExist 만들어서 모집글 존재하는지 확인하기 어차피 여기서 가져온다면 이때 maxJoin 가져오면 되겠다
-		 */
-		try {
-			PartyViewVO party = this.partyService.getById(dto.getSanPartyId());
+			try {
+				PartyViewVO party = this.partyService.getById(dto.getSanPartyId());
 
-			if (party == null) {
-				throw new NotFoundPageException();
-			} // if
+				if (party == null) {
+					throw new NotFoundPageException();
+				} // if
 
-			int currentJoin = this.joinMapper.selectTotalCount(dto);
-			int maxJoin = party.getPartyMax();
+				int currentJoin = this.joinMapper.selectTotalCount(dto);
+				int maxJoin = party.getPartyMax();
+				boolean isJoin = isJoin(dto);
 
-			if (currentJoin >= maxJoin) {
-				throw new OperationFailException();
-			} // if
-
-			String status = this.joinMapper.selectById(dto);
-
-			if (status == null) {
-
-				this.create(dto);
-			} else {
-
-				this.joinOrCancle(dto, status);
-			} // if-else
-			
-		} catch (NotFoundPageException | OperationFailException e) {
-			throw e;
-			
-		} catch (Exception e) {
-			throw new ServiceException(e);
-		} // try-catch
-	}// createOrCancle
+				
+				if (isJoin) {
+					this.joinMapper.delete(dto);
+					
+				} else if(currentJoin >= maxJoin){
+					
+					throw new OperationFailException();
+					
+				} else {
+					this.joinMapper.insert(dto);
+				}// if-else
+				
+			} catch (NotFoundPageException | OperationFailException e) {
+				throw e;
+				
+			} catch (Exception e) {
+				throw new ServiceException(e);
+			} // try-catch
+		}// createOrCancle
 	
 	
 	// 참여 생성
 	public void create(JoinDTO dto) throws Exception {
 		
 		this.joinMapper.insert(dto);
-		
-		if(!this.isJoin(dto)) {
-			throw new OperationFailException();
-		}// if
 	}// create
 	
-	
-	// 참여/취소 토글 
-	public void joinOrCancle(JoinDTO dto, String status) throws Exception {
-
-		if (status.equals("Y")) {
-
-			this.joinMapper.update(dto, "N");
-
-			if (this.isJoin(dto)) {
-				throw new OperationFailException();
-			} // if
-		} else {
-			this.joinMapper.update(dto, "Y");
-
-			if (!this.isJoin(dto)) {
-				throw new OperationFailException();
-			} // if
-		}// if-else
-	}// joinOrCancle
-	
-	
-	// 모집 참여 삭제 *** 얘도 댓글처럼 스케줄링 해야할듯 *** 
-	public boolean isJoinRemove(JoinDTO dto) throws ServiceException {
-//		log.trace("isJoinRemoved({}) invoked.", dto);
-		
-		try {
-			
-			return (this.joinMapper.delete(dto) == 1);
-			
-		}catch(Exception e) {
-			throw new ServiceException(e);
-		}// try-catch
-	}
-
 }// end class

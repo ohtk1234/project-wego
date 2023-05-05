@@ -12,7 +12,7 @@ $(() => {
 
     showGetPickStack();
     removeAndAddPickBadge();
-    
+
     // ===========================================================================init
 
     // 모달창 열림
@@ -33,7 +33,7 @@ $(() => {
             // list 가 1개이상일때만 서밋 가능
             if (pickList.length > 0) {
                 if (modalButton === "submit") {
-                    let targetURL = `${targetUserId}`;
+                    let targetURL = `modify`;
 
                     $.ajax({
                         type: "POST",
@@ -48,9 +48,9 @@ $(() => {
                             clearPick(pickList);
                         },
 
-                        success: function (newBadgeGetList) {
+                        success: function () {
 
-                            removeAndAddClassPickByGetList(newBadgeGetList);
+                            removeAndAddClassPickByGetList();
                             removeAndAddPickBadge();
                             clearPick(pickList);
                         }
@@ -64,7 +64,6 @@ $(() => {
 
     // 대표로 설정할 뱃지의 id를 담을 리스트
     let pickList = Array();
-    // console.log(pickList);
 
     // 모달에서 대표뱃지선택
     $(document).on(
@@ -187,13 +186,14 @@ var addClassGetPickByBadgeGetList = (badgeGetList) => {
 
     for (let idx = 0; idx < badgeGetList.length; idx++) {
 
-        let nowBadgeGet = badgeGetList[idx];
+        let nowBadgeGetVO = badgeGetList[idx];
 
-        let nowBadgeId = nowBadgeGet.badgeId;
-        let nowBadgeName = nowBadgeGet.badgeName;
+        let nowBadgeId = nowBadgeGetVO.badgeId;
+        let nowBadgeName = nowBadgeGetVO.badgeName;
+        let nowPickBadgeimg = nowBadgeGetVO.img;
 
-        if (preBadgeId != nowBadgeGet.badgeId) {
-            let getBadgeHTML = `<div class='item' id='${nowBadgeId}'><div class='sanBadge'></div><div class='badgeName'>${nowBadgeName}</div></div>`;
+        if (preBadgeId != nowBadgeGetVO.badgeId) {
+            let getBadgeHTML = `<div class='item' id = '${nowBadgeId}' ><div class="sanBadge" style="background-image: url(${nowPickBadgeimg});"></div><div class='badgeName'>${nowBadgeName}</div></div>`;
 
             preBadgeId = nowBadgeId;
 
@@ -204,7 +204,7 @@ var addClassGetPickByBadgeGetList = (badgeGetList) => {
 
             $(".pick5Setting > button + dialog > .badgeBox").append(getBadgeHTML)
 
-            if (nowBadgeGet.status != 'N') {
+            if (nowBadgeGetVO.status != 'N') {
                 $('#rank .item#' + nowBadgeId).addClass("pick");
                 $('#san .item#' + nowBadgeId).addClass("pick");
             } // if
@@ -214,35 +214,48 @@ var addClassGetPickByBadgeGetList = (badgeGetList) => {
     } // for
 }
 
-var removeAndAddClassPickByGetList = (pickList) => {
-    let preBadgeId = 0;
+var removeAndAddClassPickByGetList = () => {
 
-    for (let idx = 0; idx < pickList.length; idx++) {
+    $.ajax({
+        type: "GET",
+        url: `get-list/json/${targetUserId}`,
+        error: function () {
 
-        let nowBadgeGet = pickList[idx];
-        let nowBadgeId = nowBadgeGet.badgeId;
+        }, // error
 
-        if (preBadgeId != nowBadgeGet.badgeId) {
+        success: function (badgeGetList) {
+            let preBadgeId = 0;
 
-            preBadgeId = nowBadgeId;
+            for (let idx = 0; idx < badgeGetList.length; idx++) {
 
-            $('#rank .item#' + nowBadgeId).removeClass("pick");
-            $('#san .item#' + nowBadgeId).removeClass("pick");
+                let nowBadgeGetVO = badgeGetList[idx];
+                let nowBadgeId = nowBadgeGetVO.badgeId;
 
-            if (nowBadgeGet.status != 'N') {
-                $('#rank .item#' + nowBadgeId).addClass("pick");
-                $('#san .item#' + nowBadgeId).addClass("pick");
-            } // if
+                if (preBadgeId != nowBadgeGetVO.badgeId) {
 
-        } // if
+                    preBadgeId = nowBadgeId;
 
-    } // for
+                    $('#rank .item#' + nowBadgeId).removeClass("pick");
+                    $('#san .item#' + nowBadgeId).removeClass("pick");
+
+                    if (nowBadgeGetVO.status != 'N') {
+                        $('#rank .item#' + nowBadgeId).addClass("pick");
+                        $('#san .item#' + nowBadgeId).addClass("pick");
+                    } // if
+
+                } // if
+
+            } // for
+        } // success
+    });
+
+
 }
 
 
 
-var removeAndAddPickBadge = () =>{
-	$.ajax({
+var removeAndAddPickBadge = () => {
+    $.ajax({
         type: "GET",
         url: `pick-list/json/${targetUserId}`,
         error: function () {
@@ -253,35 +266,36 @@ var removeAndAddPickBadge = () =>{
             removePickBadge();
 
             addPickBadge(badgePickList);
-            
+
             setFooterPosition(); // footer.js
         } // success
     });
 }
-var removePickBadge = () =>{
-	$(".badgeBox#pick5").children("div.item").fadeOut(1000, function() {
+var removePickBadge = () => {
+    $(".badgeBox#pick5").children("div.item").fadeOut(1000, function () {
 
         $(this).remove();
-      });
+    });
 }
-var addPickBadge = (badgePickList) =>{
+var addPickBadge = (badgePickList) => {
     let preBadgeId = 0;
-    
+
     for (let idx = 0; idx < badgePickList.length; idx++) {
 
         let nowPickBadge = badgePickList[idx];
-        let nowPickBadgeId =  nowPickBadge.badgeId;
-        let nowPickBadgeName =  nowPickBadge.badgeName;
+        let nowPickBadgeId = nowPickBadge.badgeId;
+        let nowPickBadgeName = nowPickBadge.badgeName;
+        let nowPickBadgeimg = nowPickBadge.img;
 
         if (preBadgeId != nowPickBadgeId) {
-        
-            let pcikBadgeHTML = `<div class='item pick' id='${nowPickBadgeId}' style='display : none'><div class='sanBadge'></div><div class='badgeName'>${nowPickBadgeName}</div></div>`;
+
+            let pcikBadgeHTML = `<div class='item pick' id = '${nowPickBadgeId}' style = 'display : none' > <div class="sanBadge"  style="background-image: url(${nowPickBadgeimg});"></div><div class='badgeName'>${nowPickBadgeName}</div></div>`;
 
             preBadgeId = nowPickBadgeId;
 
             $(".badgeBox#pick5").append(pcikBadgeHTML);
             $(".badgeBox#pick5").children("div.item").css("display", "block");
-        }   
+        }
 
 
     }
@@ -294,17 +308,20 @@ var addDocumentStackDotAndList = (badgeGetList) => {
 
     for (let idx = 0; idx < badgeGetList.length; idx++) {
 
-        let nowBadgeGet = badgeGetList[idx];
-        let nowBadgeId = nowBadgeGet.badgeId;
+        let nowBadgeGetVO = badgeGetList[idx];
+        
+        let nowBadgeId = nowBadgeGetVO.badgeId;
+        let nowCreatedDt = getDateToTimeStamp(nowBadgeGetVO.createdDt);
 
-        let nowCreatedDt = getDateToTimeStamp(nowBadgeGet.createdDt)
-
-        if (preBadgeId != nowBadgeGet.badgeId) {
-
+        if(nowBadgeGetVO.ranking != null){
+            nowCreatedDt += ` (${nowBadgeGetVO.ranking})`;
+        } // if
+        if (preBadgeId != nowBadgeId) {
+            
             preBadgeId = nowBadgeId;
-
+            
             createdDtList = Array();
-
+            
             createdDtList.push(nowCreatedDt);
 
         } else {
@@ -322,10 +339,11 @@ var addDocumentStackDotAndList = (badgeGetList) => {
 
 
                 for (createdDtListIdx = 0; createdDtListIdx < createdDtList.length; createdDtListIdx++) {
-                    let stackContents = "<li class='stackContents'>" + createdDtList[createdDtListIdx] + "</li>";
+                    let sanStackContentsHTML = "<li class='stackContents'>" + createdDtList[createdDtListIdx] + "</li>";
+                    let rankingStackContentsHTML = "<li class='stackContents'>" + createdDtList[createdDtListIdx] + "</li>";
 
-                    $('#rank .item#' + nowBadgeId).children(".sanBadge").children(".stackList").children("ul").append(stackContents);
-                    $('#san .item#' + nowBadgeId).children(".sanBadge").children(".stackList").children("ul").append(stackContents);
+                    $('#rank .item#' + nowBadgeId).children(".sanBadge").children(".stackList").children("ul").append(rankingStackContentsHTML);
+                    $('#san .item#' + nowBadgeId).children(".sanBadge").children(".stackList").children("ul").append(sanStackContentsHTML);
                 } // for
 
             } // if
@@ -339,9 +357,10 @@ var getDateToTimeStamp = (timeStamp) => {
 
     let date = new Date(timeStamp);
 
+
     let yyyy = date.getFullYear();
-    let MM = date.getMonth();
-    let dd = date.getDay();
+    let MM = date.getMonth() + 1;
+    let dd = date.getDate();
 
     return yyyy + "-" + MM + "-" + dd;
 } // getDateToTimeStamp

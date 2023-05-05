@@ -5,6 +5,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import org.zerock.wego.config.SessionConfig;
 import org.zerock.wego.domain.common.PageInfo;
 import org.zerock.wego.domain.common.ReportDTO;
 import org.zerock.wego.domain.common.UserVO;
@@ -26,24 +27,13 @@ public class ReportController {
 
 	// 신고 접수
 	@PostMapping(path="/create", produces="text/plain; charset=UTF-8")
-	ResponseEntity<String> createReport(PageInfo target,
-										@SessionAttribute("__AUTH__")UserVO user, 
+	ResponseEntity<String> createReport(ReportDTO report,
+										@SessionAttribute(SessionConfig.AUTH_KEY_NAME)UserVO user, 
 										String reportGb) throws Exception{
 		log.trace("createReport() invoked.");
 		
 		try {
-//		ReportDTO report = new ReportDTO();
-//		report.setUserId(userId);
-//		report.setTargetGb(target.getTargetGb());
-//		report.setTargetCd(target.getTargetCd());
-//		report.setReportGb(reportGb);
-		
-			ReportDTO report = ReportDTO.builder()
-								.userId(user.getUserId())
-								.targetGb(target.getTargetGb())
-								.targetCd(target.getTargetCd())
-								.reportGb(reportGb)
-								.build();
+			report.setUserId(user.getUserId());
 		
 			this.reportService.create(report);
 		

@@ -1,5 +1,6 @@
 package org.zerock.wego.mapper;
 
+import org.apache.ibatis.annotations.Param;
 import org.zerock.wego.domain.common.UserDTO;
 import org.zerock.wego.domain.common.UserVO;
 
@@ -15,6 +16,12 @@ public interface UserMapper {
 	public abstract UserVO selectByNickname(String nickname);
 
 	// 카카오 가입 등록 
-	public abstract Integer insertUser(UserDTO dto);
+	public abstract Integer insert(UserDTO dto);
+	
+	// 존재하는 유저인가?
+	public abstract Integer isExist(Integer userId);
+	
+	// 유저 status 수정
+	public abstract Integer updateStatusById(@Param("userId") Integer userId, @Param("status") String status);
 
 }// end interface

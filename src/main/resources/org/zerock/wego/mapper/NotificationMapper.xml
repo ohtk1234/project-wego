@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.zerock.wego.mapper.NotificationMapper">
+
+	<!-- *****************  유저 코드로 알림목록 조회 ******************** -->
+
+	<select id="selectAllByUserId"
+		resultType="org.zerock.wego.domain.common.NotificationVO">
+		SELECT
+		  *	  
+		FROM
+  		  notification_v
+		WHERE
+ 		  notification_v.user_id = #{userId}
+		  AND notification_v.status != 'Y'
+	</select>
+	
+	<!-- *****************  알림 코드로 알림 조회 ******************** -->
+	
+	<select id="selectByAlarmId"
+		resultType="org.zerock.wego.domain.common.NotificationVO">
+		SELECT
+		  *	  
+		FROM
+		  notification_v
+		WHERE
+		  notification_v.alarm_id = #{alarmId}
+		  AND notification_v.status != 'Y'
+	</select>
+	
+ 	<!-- ***************** 좋아요 생성으로 생기는 알람 삽입 (중복방지)******************** -->
+				
+	<insert id="insertFavoriteByTargetCdAndUserId" parameterType="java.lang.Integer">
+		INSERT INTO admin.alarm_tb (target_gb, target_cd, user_id, contents,created_by_user_id)
+		SELECT '좋아요',
+		      "target_cd",
+		      "user_id", 
+		      '회원님의 ' ||  "target_gb" ||'글에 '|| (SELECT nickname FROM admin.user_tb WHERE user_id = #{userId}) || ' 님이 좋아요를 눌렀습니다.',
+		      #{userId}
+		FROM (
+				SELECT '모집' AS "target_gb", san_party_tb.san_party_id AS "target_cd", san_party_tb.user_id AS "user_id"
+				FROM admin.san_party_tb
+				WHERE san_party_tb.san_party_id = #{targetCd} AND san_party_tb.user_id != #{userId}
+				UNION ALL
+				SELECT '후기' AS "target_gb", san_review_tb.san_review_id AS "target_cd", san_review_tb.user_id AS "user_id"
+				FROM admin.san_review_tb
+				WHERE san_review_tb.san_review_id = #{targetCd} AND san_review_tb.user_id != #{userId}
+		)
+	</insert>
+
+	<!-- ***************** 댓글 생성으로 생기는 알람 삽입 (중복방지)******************** -->
+				
+	<insert id="insertCommentByCommentIdAndUserId" parameterType="java.lang.Integer">
+	  INSERT INTO alarm_tb (target_gb, target_cd, user_id, contents, created_by_user_id)
+	  SELECT '댓글', C.target_cd, T.user_id, '회원님의 ' || T.target_gb || '글에 새로운 댓글이 등록되었습니다.' AS contents, #{userId}
+	  FROM comment_v C,
+	  (
+		    SELECT san_party_id AS "target_cd", user_id , '모집' AS target_gb  
+		    FROM san_party_v
+		    WHERE san_party_id = (SELECT target_cd FROM comment_v WHERE comment_id = #{commentId})
+		    UNION
+		    SELECT san_review_id AS "target_cd", user_id , '후기' AS target_gb 
+		    FROM san_review_v
+		    WHERE san_review_id = (SELECT target_cd FROM comment_v WHERE comment_id = #{commentId})
+		) T
+	  WHERE C.comment_id = #{commentId}	 		
+	  AND #{userId} != T.user_id
+	</insert>
+
+    <!-- ***************** 뱃지 생성으로 생기는 알람 삽입 (중복방지)******************** -->
+            
+   <insert id="insertBadgeByBadgeIdAndUserId" parameterType="java.lang.Integer">
+    INSERT INTO alarm_tb (target_gb, target_cd, user_id, contents, created_by_user_id)
+	SELECT '뱃지', #{badgeId}, #{userId},'축하합니다! "' || T1.BADGE_NAME || '" 뱃지를 획득하셨습니다!', #{userId}
+	FROM badge_get_v T2
+	JOIN badge_tb T1 ON T1.BADGE_ID = T2.BADGE_ID
+	WHERE T2.BADGE_GET_ID = #{badgeId}
+   </insert>
+	
+	 <!-- ***************** 모임 취소 알림이 있는지 확인******************** -->
+	
+	<select id="isExistsPartyDeletionNotification" parameterType="java.util.Map" resultType="boolean">
+	   SELECT CASE WHEN COUNT(*) > 0 THEN 'true' ELSE 'false' END
+	    FROM alarm_tb
+	    WHERE user_id = #{userId}
+	      AND alarm_gb = '취소'
+	      AND target_cd = #{partyId}
+	      AND status = 'N'
+	</select>
+	
+	 <!-- ***************** 모집글 취소로 생기는 알람 삽입 (중복방지)******************** -->
+				
+	<insert id="insertPartyDeletionByPartyIdAndUserId" parameterType="java.lang.Integer">
+	INSERT INTO alarm_tb (target_gb, target_cd, user_id, alarm_gb, contents, created_by_user_id) 
+	SELECT '취소', #{partyId}, J.user_id, '긴급', 
+		   '회원님이 참여하신 "' || P.title || '" 글이 삭제되어 일정이 취소되었습니다.', #{userId}
+	FROM join_tb J 
+	INNER JOIN san_party_tb P ON J.san_party_id = P.san_party_id 
+	WHERE J.san_party_id = #{partyId} AND J.user_id != #{userId} AND P.user_id = #{userId}
+	AND NOT EXISTS (
+	  SELECT 1 FROM alarm_tb A
+	  WHERE A.user_id = J.user_id AND A.contents = '회원님이 참여하신 "' || P.title || '" 글이 삭제되어 일정이 취소되었습니다.'
+	)
+	</insert>
+	
+	
+  	<!-- ************ 알림 읽음 ************ -->
+
+	<update id="updateStatusByAlarmIdAndUserId">
+		UPDATE alarm_tb 
+		SET read_dt = current_timestamp, 
+			status = 'Y' 
+		WHERE user_id = #{userId} AND alarm_id = #{alarmId}
+	</update>
+	
+  	<!-- ************ 알림 삭제 ************ -->
+  	<delete id="deleteByAlarmId">
+  		DELETE
+  		FROM
+  			alarm_tb
+  		WHERE
+	  		alarm_id = #{alarmId}
+  	</delete>
+  	
+	<!-- *********** 알림 존재여부  ************ -->
+  	<select id="isExistByUserId" 
+  			resultType = "java.lang.Boolean">
+  		
+  		SELECT
+        CASE WHEN 
+        	EXISTS (
+            	SELECT 1 
+            	FROM alarm_tb
+            	WHERE alarm_id = #{alarmId}
+        		) 
+        		THEN 1 ELSE 0 END AS exist
+    	FROM dual
+  	</select>
+  	
+</mapper>

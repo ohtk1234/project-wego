@@ -7,13 +7,6 @@ window.addEventListener("click", (e) => {
     e.preventDefault(); // 상위 a태그로 인한 페이지 이동 방지
     const formData = new FormData(); // FormDate
 
-    // 유저 정보가 없을 경우 로그인 페이지로 이동
-    if (typeof authJson === "undefined") {
-      return (self.location = "/login/");
-    } // if
-
-    formData.set("userId", authJson.userId);
-
     // 버튼의 부모의 a태그 href 주소를 가져온다.
     const anchorOfParent = $(e.target).parent().parent().parent()[0].href;
     // href 주소를 사용해서 게시글의 카테고리와 게시글 번호를 추출한다.
@@ -49,22 +42,34 @@ window.addEventListener("click", (e) => {
 
     if (e.target.classList.toggle("on")) {
       formData.set("status", "Y");
-      favoriteCount.innerText = Number(favoriteCount.innerText) + 1;
     } else {
       formData.set("status", "N");
-      favoriteCount.innerText = Number(favoriteCount.innerText) - 1;
     } // if-else
 
-    formData.forEach((value, key) =>
-      console.log(`key: ${key}, value: ${value}`)
-    );
-    setTimeout(() => request(formData), 1000);
+    setTimeout(() => request(formData, e.target), 1000);
   } // if
 });
 
-function request(formData) {
+function request(formData, target) {
   fetch("/favorite", {
     method: "POST",
     body: formData,
-  });
+  })
+    .then((res) => {
+      if (res.url.includes("login")) {
+        self.location = res.url;
+      } // if
+      return res.json();
+    })
+    .then((resBody) => {
+      if (resBody.state === "successed") {
+        const favoriteCount = $(target).next()[0];
+
+        if (target.className === "favorite on") {
+          favoriteCount.innerText = Number(favoriteCount.innerText) + 1;
+        } else {
+          favoriteCount.innerText = Number(favoriteCount.innerText) - 1;
+        } // if-else
+      } // if
+    });
 }

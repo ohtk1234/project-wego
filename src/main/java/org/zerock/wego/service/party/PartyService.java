@@ -10,6 +10,8 @@ import org.zerock.wego.domain.party.PartyViewVO;
 import org.zerock.wego.exception.NotFoundPageException;
 import org.zerock.wego.exception.OperationFailException;
 import org.zerock.wego.exception.ServiceException;
+import org.zerock.wego.mapper.JoinMapper;
+import org.zerock.wego.mapper.NotificationMapper;
 import org.zerock.wego.mapper.PartyMapper;
 import org.zerock.wego.service.badge.BadgeGetService;
 import org.zerock.wego.service.common.CommentService;
@@ -32,6 +34,8 @@ public class PartyService {
 	private final FavoriteService favoriteService;
 	private final CommentService commentService;
 	private final BadgeGetService badgeGetService;
+	private final NotificationMapper notificationMapper;
+	private final JoinMapper joinMapper;
 
 
 	public List<PartyViewVO> getList() throws ServiceException {
@@ -65,7 +69,7 @@ public class PartyService {
 	
 	
 	// 모집글 상세 조회 
-	public PartyViewVO getById(Integer partyId) throws Exception{
+	public PartyViewVO getById(Integer partyId) throws RuntimeException{
 //		log.trace("getById({}) invoked.", partyId);
 		try {
 			PartyViewVO party = this.partyMapper.selectById(partyId);
@@ -74,21 +78,21 @@ public class PartyService {
 				 throw new NotFoundPageException();
 			}// if
 			 
-			this.partyMapper.visitCountUp(partyId); //조회수증가.
+			this.partyMapper.visitCountUp(partyId); 
 			
 			return party;
 			
 		} catch (NotFoundPageException e) {
 			throw e;
 			
-		} catch (Exception e) {
+		} catch (RuntimeException e) {
 			throw new ServiceException(e);
 		}// try-catch
 	}// getById
 	
 	// 모집글 삭제 
 	@Transactional
-	public void removeById(Integer partyId) throws Exception{
+	public void removeById(Integer partyId) throws RuntimeException{
 //		log.trace("isRemovedById({}) invoked.", partyId);
 		try {
 			boolean isExist = this.partyMapper.isExist(partyId);
@@ -96,23 +100,29 @@ public class PartyService {
 			if(!isExist) {
 				throw new NotFoundPageException();
 			}// if
-			
+			//모집글에 참여한 사용자의 ID 가져오기
+	        List<Integer> userIds = joinMapper.selectUserIdsBySanPartyId(partyId);
+
+			 // 해당 모집글에 참여한 사용자에 대한 알림 생성
+			 for (Integer userId : userIds) {
+		            // 사용자에게 삭제 후 알림을 이미 받았는지 확인
+		            if (!notificationMapper.isExistsPartyDeletionNotification(userId,partyId)) {
+		                // 그렇지 않은 경우 새 알림 만들기
+		            	log.trace(">>>>>>>>>> 모집글삭제로 인해 취소알림이 긴급으로 갑니다!");
+		                notificationMapper.insertPartyDeletionByPartyIdAndUserId(partyId, userId);
+		            }
+		        }
+			 
 			this.partyMapper.deleteById(partyId);
 			this.reportService.removeAllByTarget("SAN_PARTY", partyId);
 			this.fileService.isRemoveByTarget("SAN_PARTY", partyId);
 			this.favoriteService.removeAllByTarget("SAN_PARTY", partyId);
 			this.commentService.removeAllByTarget("SAN_PARTY", partyId);
 			
-			isExist = this.partyMapper.isExist(partyId);
-			
-			if(isExist) {
-				throw new OperationFailException();
-			}// if
-			
-		} catch (NotFoundPageException | OperationFailException e) {
+		} catch (NotFoundPageException e) {
 			throw e;
 		
-		} catch (Exception e) {
+		} catch (RuntimeException e) {
 			throw new ServiceException(e);
 		}// try-catch
 	}// removeParty

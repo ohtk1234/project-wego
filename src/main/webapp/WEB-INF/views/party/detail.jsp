@@ -28,7 +28,6 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.4.0/jquery-migrate.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
 	
-	<link rel="stylesheet" type="text/css"  href="/resources/css/default.css"/>
 	<link rel="stylesheet" type="text/css" href="/resources/css/header.css"/>
 	<link rel="stylesheet" type="text/css" href="/resources/css/footer.css"/>
 	<link rel="stylesheet" type="text/css" href="/resources/css/like.css"/>
@@ -37,7 +36,6 @@
 	
 	<script type="text/javascript" src="/resources/js/header.js"  defer></script>
 	<script type="text/javascript" src="/resources/js/footer.js"  defer></script>
-	<script type="text/javascript" src="/resources/js/default.js"  defer></script>
 	<script type="text/javascript" src="/resources/js/like.js"  defer></script>
 	<script type="text/javascript" src="/resources/js/scroll.js"  defer></script>
 	<script type="text/javascript" src="/resources/js/comment.js"  defer></script>
@@ -48,6 +46,7 @@
 	</script>
 </head>
 <body>
+<c:set var="imgBasePath" value="/img/" />
 	<div class="total-wrap">
 		<jsp:include page="../common/header.jsp" />
 			<section>
@@ -61,12 +60,12 @@
 					</div>
 				</div>
 				<div class="contents">
-					<img src=" ${party.userPic }" alt="" class="userpic" />
-					<a class="username" href="http://localhost:8080/profile/${party.userId}">${party.nickName}</a>
+					<img src=" ${empty party.userPic ? "/resources/img/leaf.png" : imgBasePath += fn:substring(party.userPic, 12, 57)}" alt="" class="userpic" />
+					<a class="username" href="/profile/${party.userId}">${party.nickName}</a>
 					<div class="likeCnt">
 						<input class="like ${isLike ? 'fill' : '' }" type="button" value="" /><label>${party.likeCnt }</label>
 					</div>
-					<img src="${party.partyPic}" alt="" class="partyImg" />
+					<img src="${empty party.partyPic ? "/resources/img/leaf.png" : imgBasePath += fn:substring(party.partyPic, 12, 57) }" alt="" class="partyImg" />
 					<div class="partyInfo">
 						<div class="info">
  							<span class="list">날짜</span> 
@@ -111,22 +110,23 @@
 							<c:when test="${after }">
 								<input type="button" class="join" style="background-color: #727272" disabled value="모집종료" />
 							</c:when>
-							<c:when test="${isJoin == false }">
-								<input type="button" class="join" id="join" name="join" value="참여하기" />
-							</c:when>
-							<c:when test="${isJoin == true }">
+							<c:when test="${isJoin == true && sessionScope.__AUTH__.userId != party.userId }">
 								<input type="button" class="join" id="clsjoin" name="join" value="취소하기" />
 							</c:when>
 							<c:when test="${party.userCnt >= party.partyMax }">
 								<input type="button" class="join" style="background-color: rgb(252, 170, 64)" disabled value="모집완료" />
+							</c:when>
+							<c:when test="${isJoin == false && sessionScope.__AUTH__.userId != party.userId}">
+								<input type="button" class="join" id="join" name="join" value="참여하기" />
 							</c:when>
 						</c:choose>
 				</div>
 				<div class="cnt">댓글 (<span id="cmtcnt">${party.commentCnt }</span>)</div>
 				<c:set var="comments" value="${comments}" />
 				<%@ include file="../comment/comment.jsp"%>
-				<div class="to top">top</div>
-				<div class="to cmt">cmt</div>
+				<div id="chat"></div>
+				<div class="scrollToTop top"></div>
+				<div class="add-item cmt"></div>
 			</section>
 		</div>
 		<jsp:include page="../common/footer.jsp" />
