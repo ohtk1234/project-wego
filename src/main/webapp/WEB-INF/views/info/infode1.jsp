@@ -3,7 +3,7 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
-<%@include file="SanInfo4.jsp" %>
+
 
 <!DOCTYPE html>
 <html lang="ko">
@@ -66,8 +66,7 @@
                 <button id="mozip" onclick="location.href='/party/{partyId}'">등산모집</button>
               </div>
                <div class="hugi">
-               
-				<button id="hugi" onclick="location.href='/review/{reviewId}'">등산후기</button>
+				<button id="hugis" onclick="location.href='/review/{reviewId}'">등산후기</button>
                 </div>
          
         </div>

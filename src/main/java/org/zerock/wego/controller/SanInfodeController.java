@@ -82,8 +82,32 @@ public class SanInfodeController {
    
    
    @GetMapping("/{sanInfoId}/SanWeather")
-   public String showSanWeather(@PathVariable("sanInfoId")Integer sanInfoId, Model model) throws ControllerException {
+   public String showSanWeather(@PathVariable("sanInfoId")Integer sanInfoId, Model model, ) throws ControllerException {
        log.info("showSanWeather.......... ");
+       
+       RestTemplate restTemplate = new RestTemplate();
+       String url = "http://apis.data.go.kr/1360000/VilageFcstInfoService/getVilageFcst";
+       String serviceKey = "%2BBhELjTRe3NF5V9X4WWmStpdfkepcguhh6zyRDGKrP0wWs6cSNeoptODzAInX9w50uF59MYdXHUaQ7iJVeNTgQ%3D%3D";
+       String baseDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+       String baseTime = LocalTime.now().format(DateTimeFormatter.ofPattern("HHmm"));
+       String nx = String.valueOf((int) ((lon - 0.001) / 0.01) + 1);
+       String ny = String.valueOf((int) ((lat - 0.001) / 0.01) + 1);
+
+       UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(url)
+               .queryParam("ServiceKey", serviceKey)
+               .queryParam("pageNo", "1")
+               .queryParam("numOfRows", "100")
+               .queryParam("dataType", "JSON")
+               .queryParam("base_date", baseDate)
+               .queryParam("base_time", baseTime)
+               .queryParam("nx", nx)
+               .queryParam("ny", ny);
+
+       ResponseEntity<String> responseEntity = restTemplate.exchange(builder.toUriString(), HttpMethod.GET, null, String.class);
+       String response = responseEntity.getBody();
+
+       ObjectMapper objectMapper = new ObjectMapper();
+       WeatherModel weatherModel = objectMapper.readValue(response, WeatherModel.class);
        
        SanInfodeVO sanInfode = this.sanInfodeService.getById(sanInfoId);
 //  	ModelAndView mv1 = new ModelAndView("info/infode1");

@@ -17,6 +17,13 @@ public class SanInfodeVO {
    private Integer lat;//위도
    private String img;//산 이미지
    private Integer likeCnt;
+   private String baseDate;
+   private String baseTime;
+   private String category;
+   private String fcstDate;
+   private String fcstTime;
+   private double fcstValue;
+  
 
 
 //   private Integer baseDate;//자신이 조회하고 싶은 날짜

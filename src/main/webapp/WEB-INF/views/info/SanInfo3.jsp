@@ -10,7 +10,26 @@
  
             <div class="cotents">
             <div class="content1">
-            <p>${sanInfode.address}</p>
+            <table>
+    <thead>
+    <tr>
+        <th>Time</th>
+        <th>Temperature</th>
+        <th>Humidity</th>
+        <th>Wind Speed</th>
+    </tr>
+    </thead>
+    <tbody>
+    <c:forEach items="${weather}" var="data">
+        <tr>
+            <td>${data.getFcstTime()}</td>
+            <td>${data.getFcstValue()} กษ</td>
+            <td>${data.getCategory() == 'REH' ? data.getFcstValue() : '-'}</td>
+            <td>${data.getCategory() == 'WSD' ? data.getFcstValue() : '-'}</td>
+        </tr>
+    </c:forEach>
+    </tbody>
+</table>
             </div>
             </div>
 
