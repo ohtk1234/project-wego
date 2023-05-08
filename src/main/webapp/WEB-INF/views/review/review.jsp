@@ -21,7 +21,6 @@
 <link rel="stylesheet" href="/resources/css/footer.css" />
 <link rel="stylesheet" href="/resources/css/reviewItem.css?after" />
 <link rel="stylesheet" href="/resources/css/reviewFrame.css?after" />
-<link rel="stylesheet" href="/resources/css/remote.css?after" />
 <link rel="stylesheet" href="/resources/css/sort.css?after" />
 
 <script src="/resources/js/header.js" defer></script>
@@ -29,7 +28,9 @@
 <script src="/resources/js/sort.js" defer></script>
 <script src="/resources/js/top.js" defer></script>
 <script src="/resources/js/favorite.js" defer></script>
+<script src="/resources/js/board-type.js" defer></script>
 <script src="/resources/js/infinity-scroll.js" defer></script>
+<script src="/resources/js/board-href.js" defer></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.4.0/jquery-migrate.min.js"></script>
@@ -46,7 +47,7 @@
 		<section>
 
 			<!-- Contents -->
-			<div class="container">
+			<div class="container" id="container">
 
 				<div class="review">
 
@@ -58,23 +59,23 @@
 					<div class="select-sort">
 						<button class="btn-select">정렬 기준</button>
 						<ul class="sortBy">  
-							<li class="sortByItem"><button type="button">최신순</button></li>
-							<li class="sortByItem"><button type="button">오래된순</button></li>
-							<li class="sortByItem"><button type="button">좋아요순</button></li>
+							<li class="sortByItem"><button id="sort-newest" type="button">최신순</button></li>
+							<li class="sortByItem"><button id="sort-oldest" type="button">오래된순</button></li>
+							<li class="sortByItem"><button id="sort-likes" type="button">좋아요순</button></li>
 						</ul>
 					</div>
 					
 				</div>
 
-				<div class="data-container">
+				<div class="data-container" id="data-container">
 					<!-- Item -->
-					<c:forEach var="item" items="${reviewList}">
+					<c:forEach var="item" items="${reviewSortList}">
 						<a href="/review/${item.sanReviewId}">
-							<div class="review-item">
-								<img class="user-img" src="${empty item.userPic ? "/resources/img/leaf.png" : imgBasePath += fn:substring(item.userPic, 12, 57)}" alt="img" />
-								<p class="user-name" id="userName">${item.nickName}</p>
+							<div class="review-item" id="${item.sortNum}">
+								<img class="user-img" id="${item.userId}" src="${empty item.userPic ? "/resources/img/default-user.jpg" : imgBasePath += fn:substring(item.userPic, 12, 57)}" alt="img" />
+								<p class="user-name" id="${item.userId}">${item.nickName}</p>
 								<p class="mountain-name" id="mountainName">${item.sanName}</p>
-								<img class="review-img" src="${empty item.reviewPic ? "/resources/img/leaf.png" : imgBasePath += fn:substring(item.reviewPic, 12, 57)}" alt="img" />
+								<img class="review-img" src="${empty item.reviewPic ? "/resources/img/default-review.jpg" : imgBasePath += fn:substring(item.reviewPic, 12, 57)}" alt="img" />
 								<h3 class="review-title" id="title">${item.title}</h3>
 								<p class="review-contents" id="text">${item.contents}</p>
 								<div class="review-like">
@@ -98,7 +99,7 @@
 					</c:forEach>
 				</div>
 
-
+				<div id="maxPage" boardMaxPage="${maxPage}" style="display:none;"></div>
 			</div>
 		</section>
 		<!-- main end -->

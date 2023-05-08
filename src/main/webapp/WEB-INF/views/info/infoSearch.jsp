@@ -21,7 +21,6 @@
 <link rel="stylesheet" href="/resources/css/footer.css" />
 <link rel="stylesheet" href="/resources/css/sanInfoItem.css?after" />
 <link rel="stylesheet" href="/resources/css/sanInfoSearch.css?after" />
-<link rel="stylesheet" href="/resources/css/remote.css?after" />
 <link rel="stylesheet" href="/resources/css/sort.css?after" />
 
 <script src="/resources/js/header.js" defer></script>
@@ -30,6 +29,8 @@
 <script src="/resources/js/top.js" defer></script>
 <script src="/resources/js/favorite.js" defer></script>
 <script src="/resources/js/board-type.js" defer></script>
+<script src="/resources/js/infinity-scroll-search.js" defer></script>
+<script src="/resources/js/board-href.js" defer></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.4.0/jquery-migrate.min.js"></script>
@@ -48,7 +49,7 @@
 			<!-- Contents -->
 
 
-			<div class="container">
+			<div class="container" id="container">
 
 				<div class="search-results">
 
@@ -60,23 +61,15 @@
 						<h2>❤️ 산 ❤️</h2>
 					</div>
 
-					<!-- 정렬 -->
-					<div class="select-sort">
-						<button class="btn-select">정렬 기준</button>
-						<ul class="sortBy">  
-							<li class="sortByItem"><button id="sort-abc" type="button">ㄱㄴㄷ순</button></li>
-							<li class="sortByItem"><button id="sort-likes" type="button">좋아요순</button></li>
-						</ul>
-					</div>
 				</div>
 
 
-				<div class="data-container">
+				<div class="data-container" id="data-container">
 					<!-- Item -->
-					<c:forEach var="item" items="${sanInfoList}">
+					<c:forEach var="item" items="${sanInfoSortList}">
 						<a href="/info/${item.sanInfoId}">
-							<div class="mountain-item">
-								<img class="mountain-img" src="${empty item.img ? "/resources/img/leaf.png" : imgBasePath += fn:substring(item.img, 12, 57)}" alt="img" />
+							<div class="mountain-item" id="${item.sortNum}">
+								<img class="mountain-img" src="/${item.img}" alt="img" />
 								<h3 class="mountain-name" id="mountainName">${item.sanName}</h3>
 								<p class="mountain-contents" id="text">${item.details}</p>
 								<div class="mountain-like">
@@ -97,7 +90,7 @@
 					</c:forEach>
 				</div>
 
-
+				<div id="maxPage" boardMaxPage="${maxPage}" style="display:none;"></div>
 			</div>
 		</section>
 		<!-- main end -->

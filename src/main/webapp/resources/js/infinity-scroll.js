@@ -1,13 +1,20 @@
-// 변수 초기화
-var page = 1; // 초기 페이지 번호
-var lastItemId = 0;
-var isLoading = false; // 현재 요청이 진행중인지 여부 (중복실행방지)
-var url = '/info'; // 데이터 요청 URL
-var orderBy = 'abc'; // 초기 정렬 기준
-var amount = 50;
+var page = 2;
+var sortNum = 0;
+sortNum = $('#data-container').children().last().attr('sortNum');
 
-lastItemId = $('#data-container').children().last().attr('sortNum');
+var maxPage = parseInt(document.getElementById("maxPage").getAttribute("boardMaxPage"));
 
+var url = window.location.href;
+var urlPathname = window.location.pathname;
+
+var orderBy;
+if (urlPathname === '/info') {
+  orderBy = 'abc';
+} else if (urlPathname === '/review' || urlPathname === '/party') {
+  orderBy = 'newest';
+} // if-else
+
+var isLoading = false;
 
 // 스크롤 이벤트 핸들러
 $(window).scroll(function () {
@@ -15,70 +22,67 @@ $(window).scroll(function () {
   var windowHeight = $(window).height();
   var documentHeight = $(document).height();
 
-
-  if (scrollTop + 1000 >= documentHeight - windowHeight) {
-    isLoading = true;
-    // 페이지 번호 증가
-    page++;
-    next_load();
-    isLoading = false;
-  }
-
-
-  function next_load() {
-    // AJAX 요청
-    $.ajax({
-      type: "POST",
-      url: "/info",
-      data: { page: page, lastItemId: lastItemId, orderBy: orderBy },
-      success: function (data) {
-
-        // 생성된 jsp 코드를 추가
-        $('#data-container').append(data);
+  if (page <= maxPage) {
+    if (scrollTop + 500 >= documentHeight - windowHeight && !isLoading) {
+      isLoading = true;
+      next_load();
+    } // if  
+  } else {
+    return;
+  } // if-else
+});
 
 
-        // 마지막 아이템 ID 업데이트
-        lastItemId = $('#data-container').children().last().attr('sortNum');
-      }
+function next_load() {
+  // AJAX 요청
+  $.ajax({
+    type: "POST",
+    url: url,
+    data: { page: page, sortNum: sortNum, orderBy: orderBy },
+    success: function (data) {
+      $('#data-container').append(data);
 
-    })
-  }
-})
+      sortNum = $('#data-container').children().last().attr('sortNum');
+
+    }, complete: function () {
+      isLoading = false;
+      setTimeout(function () { page++; }, 1000);
+    }
+  });
+}
+
 
 $('#sort-abc').data('orderBy', 'abc');
 $('#sort-likes').data('orderBy', 'like');
-
+$('#sort-newest').data('orderBy', 'newest');
+$('#sort-oldest').data('orderBy', 'oldest');
 
 // 정렬 버튼 클릭 이벤트 핸들러 등록
-$('#sort-abc, #sort-likes').on('click', function () {
+$('#sort-abc, #sort-likes, #sort-newest, #sort-oldest').on('click', function () {
   // 클릭한 버튼의 orderBy 값을 가져옵니다.
   orderBy = $(this).data('orderBy');
+  page = 1;
+  sortNum = 0;
 
-  console.log(orderBy);
-
-  // 서버로 GET 요청 보내기
   $.ajax({
     type: "POST",
-    url: "/info",
-    data: { page: page, lastItemId: lastItemId, orderBy: orderBy },
+    url: url,
+    data: { page: page, sortNum: sortNum, orderBy: orderBy },
     success: function (data) {
-
+	  page++;
       // 부모 요소 가져오기
-      const parent = document.getElementById('data-container');
+      var parent = document.getElementById('data-container');
 
       // 부모 요소에서 자식 요소를 모두 제거
       while (parent.firstChild) {
         parent.removeChild(parent.firstChild);
-      }
+      } // while
+
       // 생성된 jsp 코드를 추가
       $('#data-container').append(data);
 
-
       // 마지막 아이템 ID 업데이트
-      lastItemId = $('#data-container').children().last().attr('sortNum');
+      sortNum = $('#data-container').children().last().attr('sortNum');
     }
   });
-
-
-
 })

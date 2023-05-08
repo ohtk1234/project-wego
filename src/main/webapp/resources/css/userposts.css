@@ -80,7 +80,7 @@ tbody > td {
   transition: all 0.5s ease-in-out;
 }
 #pagination li:hover {
-  font-size: 20px;
+  /*font-size: 20px;*/
   color: aliceblue;
   background-color: rgba(78, 197, 61, 0.75);
 }
