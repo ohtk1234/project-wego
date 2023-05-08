@@ -13,7 +13,10 @@
             <h2>${sanInfode.sanName}</h2>
             
 
-            <p>${sanInfode.img}</p>
+           	<p>${sanInfode.height}</p>
+            <p>${sanInfode.details}</p>
+            
+            <p>${sanInfode.overview}</p>
             </div>
             </div>
 

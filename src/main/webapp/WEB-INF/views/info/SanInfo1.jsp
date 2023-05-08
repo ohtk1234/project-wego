@@ -15,7 +15,7 @@
             
 
             <p>${sanInfode.reason}</p>
-            <p>${sanInfode.details}</p>
+            
 
             </div>
             </div>

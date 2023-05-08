@@ -18,29 +18,42 @@ import lombok.extern.log4j.Log4j2;
 @Service
 public class SanInfodeService {
    
-   private final SanInfodeMapper mapper;
+   private final SanInfodeMapper sanInfodeMapper;
    public SanInfodeVO getById(Integer sanInfoId) throws ServiceException{
       
-      log.trace("selectById() invoked");
+      log.trace("getById() invoked");
       
       try {
-    	  return this.mapper.selectById(sanInfoId);
+    	  return this.sanInfodeMapper.selectById(sanInfoId);
 		} catch (Exception e) {
 			throw new ServiceException(e);
 		} // try-catch
       
-      
-      
-      
-		
-      
-      
-      
-      
-      
-      
-      
-   }//select
+      }//select
+   
+   public Integer getByLat(Integer lat) {
+	   log.trace("getByLat() invoked.");
+	   
+	   try {
+		   return this.sanInfodeMapper.selectByLat(lat);
+		   
+	   }catch(Exception e) {
+		   throw new ServiceException(e);
+	   }
+   }
+   
+   public String getByLon(Integer lon) {
+	   log.trace("getByLon() invoked.");
+	   
+	   try {
+		   return this.sanInfodeMapper.selectByLon(lon);
+		   
+	   }catch(Exception e) {
+		   throw new ServiceException(e);
+	   }
+   }
+   
+   
    
    
 

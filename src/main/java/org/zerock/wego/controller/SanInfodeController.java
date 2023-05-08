@@ -82,10 +82,10 @@ public class SanInfodeController {
    
    
    @GetMapping("/{sanInfoId}/SanWeather")
-   public String showSanWeather(@PathVariable("sanInfoId")Integer sanInfoId, Model model, ) throws ControllerException {
+   public String showSanWeather(@PathVariable("sanInfoId")Integer sanInfoId, Model model, Integer lat, Integer lon) throws ControllerException {
        log.info("showSanWeather.......... ");
        
-       RestTemplate restTemplate = new RestTemplate();
+       RestTemplate restTemplate = new RestTemplate();//json
        String url = "http://apis.data.go.kr/1360000/VilageFcstInfoService/getVilageFcst";
        String serviceKey = "%2BBhELjTRe3NF5V9X4WWmStpdfkepcguhh6zyRDGKrP0wWs6cSNeoptODzAInX9w50uF59MYdXHUaQ7iJVeNTgQ%3D%3D";
        String baseDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
@@ -93,7 +93,7 @@ public class SanInfodeController {
        String nx = String.valueOf((int) ((lon - 0.001) / 0.01) + 1);
        String ny = String.valueOf((int) ((lat - 0.001) / 0.01) + 1);
 
-       UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(url)
+       UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(url)//받아옴
                .queryParam("ServiceKey", serviceKey)
                .queryParam("pageNo", "1")
                .queryParam("numOfRows", "100")
@@ -106,12 +106,14 @@ public class SanInfodeController {
        ResponseEntity<String> responseEntity = restTemplate.exchange(builder.toUriString(), HttpMethod.GET, null, String.class);
        String response = responseEntity.getBody();
 
-       ObjectMapper objectMapper = new ObjectMapper();
-       WeatherModel weatherModel = objectMapper.readValue(response, WeatherModel.class);
+       ObjectMapper objectMapper = new ObjectMapper();//자바 객체로 만들어줌
+       WeatherModel weatherModel = objectMapper.readValue(response, WeatherModel.class);//WeatherModel로 만듬
        
        SanInfodeVO sanInfode = this.sanInfodeService.getById(sanInfoId);
 //  	ModelAndView mv1 = new ModelAndView("info/infode1");
+       
     	model.addAttribute("sanInfode", sanInfode);
+    	model.addAttribute("weather", weatherModel);//model에 담아 보냄
      	
      	return "/info/SanInfo3";
    

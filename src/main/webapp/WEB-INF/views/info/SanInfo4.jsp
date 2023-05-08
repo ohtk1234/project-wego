@@ -5,7 +5,7 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
-
+ 
 <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=9d563a431666fc762d165b66fa174cbc"></script>
 <div id="map" style="width:100%;height:350px;"></div>
 

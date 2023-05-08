@@ -16,8 +16,9 @@ public interface SanInfodeMapper {
 	//public abstract SanInfodeVO selectById(Integer sanInfoId); 
 
    //public abstract WeatherVO selectAll
-   
-   
+   public abstract String selectByLon(Integer lon);
+   public abstract Integer selectByLat(Integer lat);
+
    
 
 }
