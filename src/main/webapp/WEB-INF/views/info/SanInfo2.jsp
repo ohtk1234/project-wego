@@ -10,12 +10,6 @@
  
             <div class="cotents">
             <div class="content1">
-            <h2>${sanInfode.sanName}</h2>
-            
-
-           	<p>${sanInfode.height}</p>
-            <p>${sanInfode.details}</p>
-            
             <p>${sanInfode.overview}</p>
             </div>
             </div>

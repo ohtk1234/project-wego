@@ -1,19 +1,30 @@
 package org.zerock.wego.controller;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.zerock.wego.domain.info.SanInfodeVO;
 import org.zerock.wego.domain.party.PartyViewVO;
 import org.zerock.wego.exception.ControllerException;
 
 import org.zerock.wego.service.info.SanInfodeService;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -82,7 +93,7 @@ public class SanInfodeController {
    
    
    @GetMapping("/{sanInfoId}/SanWeather")
-   public String showSanWeather(@PathVariable("sanInfoId")Integer sanInfoId, Model model, Integer lat, Integer lon) throws ControllerException {
+   public String showSanWeather(@PathVariable("sanInfoId")Integer sanInfoId, Model model, Integer lat, Integer lon) throws ControllerException, JsonMappingException, JsonProcessingException {
        log.info("showSanWeather.......... ");
        
        RestTemplate restTemplate = new RestTemplate();//json

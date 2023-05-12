@@ -19,7 +19,7 @@
             
             
 </div>
-<script>
+
 <script>
 kakao.maps.load(function() {
     var map = new kakao.maps.Map(document.getElementById('map'), {
@@ -32,7 +32,7 @@ kakao.maps.load(function() {
     });
   });
 </script>
-</script>
+
 
 
 

@@ -11,10 +11,12 @@
 
             <div class="cotents">
             <div class="content1">
-            <h2>${sanInfode.sanName}</h2>
-            
-
-            <p>${sanInfode.reason}</p>
+            <h2>100명산 선정 이유</h2>
+            <p>${sanInfoVO.reason}</p>
+      		<h2>높이</h2>
+            <p>${sanInfoVO.height} M</p>
+            <h2>상세 설명</h2>
+            <p>${sanInfoVO.details}</p>
             
 
             </div>
